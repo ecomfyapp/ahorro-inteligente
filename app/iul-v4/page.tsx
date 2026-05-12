@@ -689,6 +689,7 @@ export default function Home() {
   const [isSubmittingLead, setIsSubmittingLead] = useState(false);
   const [isPhoneValidating, setIsPhoneValidating] = useState(false);
   const [hasBlurredPhone, setHasBlurredPhone] = useState(false);
+  const [leadToken, setLeadToken] = useState("");
   const transitionTimeoutRef = useRef<number | null>(null);
   const phoneValidationTimeoutRef = useRef<number | null>(null);
 
@@ -1155,6 +1156,43 @@ export default function Home() {
     }
   }
 
+  async function prepareLeadToken() {
+    if (leadToken) return leadToken;
+
+    const tokenResponse = await fetch("/api/lead-token", { cache: "no-store" });
+
+    if (!tokenResponse.ok) {
+      throw new Error("No pudimos preparar el envio seguro. Intenta nuevamente.");
+    }
+
+    const tokenBody = (await tokenResponse.json().catch(() => null)) as { token?: string } | null;
+    const nextLeadToken = tokenBody?.token;
+
+    if (!nextLeadToken) {
+      throw new Error("No pudimos preparar el envio seguro. Intenta nuevamente.");
+    }
+
+    setLeadToken(nextLeadToken);
+    return nextLeadToken;
+  }
+
+  async function handleNameContinue() {
+    if (!answers.firstName.trim() || !answers.lastName.trim()) return;
+
+    setSubmitError("");
+    transitionTo("phone", "forward");
+
+    try {
+      await prepareLeadToken();
+    } catch (error) {
+      const message =
+        error instanceof Error && error.message
+          ? error.message
+          : "No pudimos preparar el envio seguro. Intenta nuevamente.";
+      setSubmitError(message);
+    }
+  }
+
   async function submitLead() {
     if (isRejectedPage || hasAgeRejectedCookie()) {
       setCurrentStep("rejected");
@@ -1280,10 +1318,14 @@ export default function Home() {
           zipCode: completedAnswers.zipCode,
         }).filter(([, value]) => value !== "" && value != null)
       );
+      const preparedLeadToken = await prepareLeadToken();
 
-      const response = await fetch("/api/lead-iul-v4", {
+      const response = await fetch("/api/lead", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "x-lead-token": preparedLeadToken,
+        },
         body: JSON.stringify({
           page: "/iul-v4",
           answers: cleanedAnswers,
@@ -1298,11 +1340,20 @@ export default function Home() {
         throw new Error(errorBody?.error || "No pudimos enviar tu solicitud ahora mismo.");
       }
 
+      const responseBody = (await response.json().catch(() => null)) as { leadId?: string } | null;
+      const leadId = responseBody?.leadId;
+      const nextParams = new URLSearchParams(window.location.search);
+      if (leadId) {
+        nextParams.set("lead_id", leadId);
+      }
+      const nextSearch = nextParams.toString() ? `?${nextParams.toString()}` : "";
+
       window.history.replaceState(
         null,
         "",
-        `${window.location.pathname}${window.location.search}${successHash}`,
+        `${window.location.pathname}${nextSearch}${successHash}`,
       );
+      setLeadToken("");
       transitionTo("success", "forward");
     } catch (error) {
       const message =
@@ -1843,7 +1894,7 @@ export default function Home() {
 
               <button
                 type="button"
-                onClick={() => transitionTo("phone", "forward")}
+                onClick={() => void handleNameContinue()}
                 disabled={!answers.firstName.trim() || !answers.lastName.trim()}
                 className="inline-flex h-[54px] items-center justify-center gap-2 rounded-full bg-[var(--brand)] px-6 text-[18px] font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-45 hover:bg-[var(--brand-dark)]"
               >
