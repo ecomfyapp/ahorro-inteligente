@@ -158,7 +158,7 @@ export default function BenchCallPage({
       lead_event_id: leadEventId || undefined,
       lead_id: leadId || undefined,
       external_id: leadId || undefined,
-      phone_number: phoneNumber,
+      ringba_phone_number: phoneNumber,
       country: "US",
       ...getUtmParams(),
     });
