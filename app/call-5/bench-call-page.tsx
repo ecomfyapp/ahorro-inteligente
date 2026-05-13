@@ -2,10 +2,13 @@ import Image from "next/image";
 import Script from "next/script";
 import type { ReactElement, SVGProps } from "react";
 
-const phoneNumber = "+18882882203";
+const phoneNumber = process.env.NEXT_PUBLIC_PAY_PER_CALL_PHONE_NUMBER || "+18882882203";
 const phoneDisplay = phoneNumber;
-const telHref = "tel:+18882882203";
-const ringbaScriptUrl = "//b-js.ringba.com/CA76c805e83b0e4db88d379944dc557457";
+const telHref = `tel:${phoneNumber}`;
+const ringbaCampaignId = process.env.NEXT_PUBLIC_RINGBA_CAMPAIGN_ID || "";
+const ringbaScriptUrl = /^CA[a-zA-Z0-9]+$/.test(ringbaCampaignId)
+  ? `//b-js.ringba.com/${ringbaCampaignId}`
+  : "";
 
 const HERO_BG = "#0a3d91";
 const ACCENT = "#f97316";
@@ -148,7 +151,9 @@ export default function BenchCallPage({ ageGroup = "", insuranceGoal = "" }: Ben
           window._rgba_tags.push(${ringbaTags});
         `}
       </Script>
-      <Script id="ringba-call-5-number-pool" src={ringbaScriptUrl} strategy="afterInteractive" />
+      {ringbaScriptUrl ? (
+        <Script id="ringba-call-5-number-pool" src={ringbaScriptUrl} strategy="afterInteractive" />
+      ) : null}
 
       <header className="border-b border-slate-200 bg-white">
         <nav className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 lg:px-8">
