@@ -1417,10 +1417,6 @@ export default function Home() {
       }
       const shouldUsePayPerCallThankYou = isPayPerCallWindowOpen();
 
-      if (shouldUsePayPerCallThankYou) {
-        nextParams.set("age_group", completedAnswers.ageGroup);
-        nextParams.set("insurance_goal", completedAnswers.insuranceGoal);
-      }
       const nextSearch = nextParams.toString() ? `?${nextParams.toString()}` : "";
 
       window.history.replaceState(
