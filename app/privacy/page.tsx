@@ -11,7 +11,7 @@ export default function PrivacyPage() {
 
         <div className="mt-8 space-y-7 text-[16px] leading-7 text-[#4b5563]">
           <p>
-            Better Life ("Better Life", "nosotros", "nuestro" o "nos") se
+            Better Life (&quot;Better Life&quot;, &quot;nosotros&quot;, &quot;nuestro&quot; o &quot;nos&quot;) se
             compromete a proteger la privacidad y seguridad de tu información
             personal. Esta Política de Privacidad describe cómo recopilamos,
             usamos, divulgamos y protegemos la información personal obtenida a

@@ -1380,7 +1380,7 @@ export default function Home() {
         `${window.location.pathname}${nextSearch}${successHash}`,
       );
       setLeadToken("");
-      transitionTo("success", "forward");
+      window.location.assign(`/thanks/lead${nextSearch}`);
     } catch (error) {
       const message =
         error instanceof Error && error.message

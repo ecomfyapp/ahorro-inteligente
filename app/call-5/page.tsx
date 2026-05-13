@@ -4,7 +4,6 @@
 
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
-import BenchCallPage from "./bench-call-page";
 
 const trustBadges = [
   { icon: "/media/tax-free.svg", text: "Retiro libre de impuestos" },
@@ -273,6 +272,14 @@ function getPhoneValidationMessage(value: string) {
 
 function isValidEmail(value: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
+}
+
+function buildThanksCallUrl(ageGroup: string, insuranceGoal: string) {
+  const params = new URLSearchParams(window.location.search);
+  if (ageGroup) params.set("age_group", ageGroup);
+  if (insuranceGoal) params.set("insurance_goal", insuranceGoal);
+  const search = params.toString();
+  return `/thanks/call${search ? `?${search}` : ""}`;
 }
 
 function normalizeZipCode(value: string) {
@@ -895,7 +902,12 @@ export default function Home() {
       window.history.replaceState(null, "", window.location.href);
     }
     window.setTimeout(() => {
-      transitionTo(option === "65+" ? "disqualified" : "call-page", "forward");
+      if (option === "65+") {
+        transitionTo("disqualified", "forward");
+        return;
+      }
+
+      window.location.assign(buildThanksCallUrl(option, answers.insuranceGoal));
     }, 120);
   }
 
@@ -933,12 +945,7 @@ export default function Home() {
     setIsFinishingFlow(true);
 
     window.setTimeout(() => {
-      window.history.replaceState(
-        null,
-        "",
-        `${window.location.pathname}${window.location.search}${successHash}`,
-      );
-      transitionTo("success", "forward");
+      window.location.assign(buildThanksCallUrl(answers.ageGroup, answers.insuranceGoal));
       setIsFinishingFlow(false);
     }, 250);
   }
@@ -1665,18 +1672,6 @@ export default function Home() {
 
   if (!isDisqualificationCheckComplete) {
     return null;
-  }
-
-  if (currentStep === "call-page") {
-    return (
-      <>
-        <CallFunnelPixels currentStep={currentStep} />
-        <BenchCallPage
-          ageGroup={answers.ageGroup}
-          insuranceGoal={answers.insuranceGoal}
-        />
-      </>
-    );
   }
 
   return (

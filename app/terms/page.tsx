@@ -14,7 +14,7 @@ export default function TermsPage() {
             Bienvenido a Better Life. Estos Términos y Condiciones regulan tu
             acceso y uso de nuestro sitio web y de cualquier contenido,
             servicio, función, formulario o comunicación que se ofrezca a través
-            de él (en conjunto, el "Sitio").
+            de él (en conjunto, el &quot;Sitio&quot;).
           </p>
           <p>
             Al acceder o usar el Sitio, aceptas estos Términos. Si no estás de
@@ -84,7 +84,7 @@ export default function TermsPage() {
               5. Sin garantías
             </h2>
             <p className="mt-3">
-              El Sitio se ofrece "tal cual" y según disponibilidad. Better Life
+              El Sitio se ofrece &quot;tal cual&quot; y según disponibilidad. Better Life
               no garantiza resultados, disponibilidad ni exactitud del contenido.
             </p>
           </section>
