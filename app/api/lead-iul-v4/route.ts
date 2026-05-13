@@ -224,7 +224,7 @@ export async function POST(request: Request) {
   );
   const payload = {
     submittedAt: new Date().toISOString(),
-    source: "best-money-next",
+    source: "better-life-next",
     pagina: body.page || "home",
     ipAddress: requestIp,
     geolocation: geo,

@@ -10,9 +10,9 @@ const defaultUrl = process.env.VERCEL_URL
 
 export const metadata: Metadata = {
   metadataBase: new URL(defaultUrl),
-  title: "Best Life IUL Insurance",
+  title: "Better Life IUL Insurance",
   description:
-    "Landing page inspired by the original BestMoney home insurance compare experience.",
+    "Consulta opciones de seguros de vida IUL con asesores licenciado.",
   icons: {
     icon: "/icon.png",
     shortcut: "/icon.png",

@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { inferUsZipFromStateAndPhone } from "@/lib/infer-us-zip";
 
@@ -130,7 +131,7 @@ const emptyAnswers: FunnelAnswers = {
   detectedState: "",
 };
 
-const deviceStorageKey = "best-money-device-id";
+const deviceStorageKey = "better-life-device-id";
 const deviceCookieName = "bf_iul_device_id";
 const trustedFormScriptId = "trustedform-certify-sdk";
 const trustedFormFieldName = process.env.NEXT_PUBLIC_TRUSTEDFORM_FIELD || "xxTrustedFormCertUrl";
@@ -1713,7 +1714,7 @@ export default function Home() {
             somos nosotros. ¡Contéstala!
           </p>
           <p className="mx-auto mt-6 max-w-[380px] text-[14px] leading-[1.6] text-white/55">
-            Best Life es una plataforma independiente de información sobre
+            Better Life es una plataforma independiente de información sobre
             seguros. No somos una aseguradora. Los asesores mencionados están
             certificados y regulados por el departamento de seguros de su estado.
           </p>
@@ -2037,11 +2038,20 @@ export default function Home() {
                 className="-mt-1 text-center text-[11px] leading-[1.45] text-[#6b7280]"
                 data-tf-element-role="consent-language"
               >
-                Al hacer clic en “Ver mi cotización ahora”, acepto recibir
-                llamadas, mensajes de texto y correos electrónicos de agentes
-                de seguros licenciados y socios de marketing sobre seguros de
-                vida y productos financieros al número de teléfono y correo proporcionados,
-                incluyendo el uso de tecnología automatizada.
+                Al hacer clic en <strong>“Ver mi cotización ahora”</strong>, doy mi consentimiento expreso por escrito y mi firma electrónica para que <strong>Sunnel LLC</strong> (better-life), sus{" "}
+                <Link href="/socios" className="font-bold text-[#4b5563] underline underline-offset-2">
+                  socios de mercadeo y aseguradoras licenciadas
+                </Link>{" "}
+                y cualquier persona que llame o envíe mensajes en su nombre, me contacten al número de teléfono y correo electrónico proporcionados incluso si están en alguna lista “No Llamar” estatal, federal o interna con fines de mercadeo de seguros de vida, IUL, gastos finales y productos financieros relacionados. Acepto que dichas comunicaciones pueden hacerse mediante{" "}
+                <strong>sistemas de marcación automática, marcadores predictivos, mensajes de voz pregrabada o artificial (incluyendo IA), y SMS automatizados.</strong>{" "}
+                Pueden aplicar tarifas estándar de mensajes y datos. <strong>Entiendo que este consentimiento no es condición para comprar ningún producto</strong> y que puedo revocarlo en cualquier momento respondiendo <strong>STOP</strong> a un SMS o usando el enlace de cancelación en los correos. He leído y acepto la{" "}
+                <Link href="/privacy" className="font-bold text-[#4b5563] underline underline-offset-2">
+                  Política de Privacidad
+                </Link>{" "}
+                y los{" "}
+                <Link href="/terms" className="font-bold text-[#4b5563] underline underline-offset-2">
+                  Términos de Uso
+                </Link>.
               </p>
 
               <p className="min-h-[22px] text-[14px] text-[#d14c4c]">
@@ -2178,12 +2188,12 @@ export default function Home() {
         </>
       )}
       <footer className="px-4 pb-5 pt-3 text-center text-[9px] leading-[1.45] text-[#b8bec8] md:text-[10px]">
-        <p>© 2025 Best Life. All Rights Reserved.</p>
+        <p>© 2025 Better Life. All Rights Reserved.</p>
         <p className="mx-auto mt-2 max-w-[920px]">
           This site is not part of Facebook or Meta Platforms, Inc. Additionally, this site is not endorsed by Facebook in any way. “Facebook” is a registered trademark of Meta Platforms, Inc.
         </p>
         <p className="mx-auto mt-2 max-w-[920px]">
-          Best Life is an independent promotional and advertising service. This website and the services offered are not sponsored, affiliated with, endorsed, or administered by Facebook. The content on this site has not been reviewed, approved, or certified by Facebook or any of its related entities.
+          Better Life is an independent promotional and advertising service. This website and the services offered are not sponsored, affiliated with, endorsed, or administered by Facebook. The content on this site has not been reviewed, approved, or certified by Facebook or any of its related entities.
         </p>
       </footer>
     </main>

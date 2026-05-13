@@ -444,7 +444,7 @@ export async function POST(request: Request) {
   const zipCode = normalizeZipCode(restAnswers.zipCode);
   const lead = {
     submittedAt,
-    source: "best-money-next",
+    source: "better-life-next",
     pagina: body.page || "home",
     funnelId,
     ipAddress: requestIp,
