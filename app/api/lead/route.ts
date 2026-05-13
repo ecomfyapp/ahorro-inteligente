@@ -228,12 +228,17 @@ async function claimTrustedFormCertificate({
       Accept: "application/json",
       Authorization: `Basic ${Buffer.from(`API:${apiKey}`).toString("base64")}`,
       "Content-Type": "application/json",
+      "api-version": "4.0",
     },
     body: JSON.stringify({
-      email,
-      phone,
-      reference: leadId,
-      vendor: process.env.TRUSTEDFORM_VENDOR?.trim() || "best-life",
+      retain: {
+        reference: leadId,
+        vendor: process.env.TRUSTEDFORM_VENDOR?.trim() || "Better Life",
+      },
+      match_lead: {
+        email,
+        phone,
+      },
     }),
     cache: "no-store",
   });
