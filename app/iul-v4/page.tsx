@@ -135,6 +135,9 @@ const deviceStorageKey = "better-life-device-id";
 const deviceCookieName = "bf_iul_device_id";
 const trustedFormScriptId = "trustedform-certify-sdk";
 const trustedFormFieldName = process.env.NEXT_PUBLIC_TRUSTEDFORM_FIELD || "xxTrustedFormCertUrl";
+const payPerCallStatus = process.env.NEXT_PUBLIC_PAY_PER_CALL_STATUS;
+const payPerCallStartTime = process.env.NEXT_PUBLIC_PAY_PER_CALL_START_TIME || "10:00";
+const payPerCallEndTime = process.env.NEXT_PUBLIC_PAY_PER_CALL_END_TIME || "18:00";
 const deviceCookieDurationDays = 15;
 const ageRejectedCookieName = "bf_age_rejected";
 const ageRejectedCookieDurationDays = 90;
@@ -248,6 +251,46 @@ function getTrustedFormCertUrl() {
 
   const field = document.getElementsByName(trustedFormFieldName)[0] as HTMLInputElement | undefined;
   return field?.value?.trim() || "";
+}
+
+function parseTimeToMinutes(value: string) {
+  if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(value)) return null;
+
+  const [hours, minutes] = value.split(":").map(Number);
+  return hours * 60 + minutes;
+}
+
+function getNewYorkMinutes() {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/New_York",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).formatToParts(new Date());
+  const hour = Number(parts.find((part) => part.type === "hour")?.value);
+  const minute = Number(parts.find((part) => part.type === "minute")?.value);
+
+  if (!Number.isFinite(hour) || !Number.isFinite(minute)) return null;
+
+  return hour * 60 + minute;
+}
+
+function isWithinTimeWindow(current: number, start: number, end: number) {
+  if (start === end) return true;
+  if (start < end) return current >= start && current < end;
+  return current >= start || current < end;
+}
+
+function isPayPerCallWindowOpen() {
+  if (payPerCallStatus !== "ON") return false;
+
+  const start = parseTimeToMinutes(payPerCallStartTime);
+  const end = parseTimeToMinutes(payPerCallEndTime);
+  const current = getNewYorkMinutes();
+
+  if (start == null || end == null || current == null) return false;
+
+  return isWithinTimeWindow(current, start, end);
 }
 
 function setDeviceCookie(deviceId: string) {
@@ -1372,6 +1415,12 @@ export default function Home() {
       if (leadId) {
         nextParams.set("lead_id", leadId);
       }
+      const shouldUsePayPerCallThankYou = isPayPerCallWindowOpen();
+
+      if (shouldUsePayPerCallThankYou) {
+        nextParams.set("age_group", completedAnswers.ageGroup);
+        nextParams.set("insurance_goal", completedAnswers.insuranceGoal);
+      }
       const nextSearch = nextParams.toString() ? `?${nextParams.toString()}` : "";
 
       window.history.replaceState(
@@ -1380,7 +1429,9 @@ export default function Home() {
         `${window.location.pathname}${nextSearch}${successHash}`,
       );
       setLeadToken("");
-      window.location.assign(`/thanks/lead${nextSearch}`);
+      window.location.assign(
+        `${shouldUsePayPerCallThankYou ? "/thanks/call" : "/thanks/lead"}${nextSearch}`,
+      );
     } catch (error) {
       const message =
         error instanceof Error && error.message
