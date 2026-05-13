@@ -1462,7 +1462,6 @@ export default function Home() {
       if (leadId) {
         nextParams.set("lead_id", leadId);
       }
-      nextParams.set("event_id", leadEventId);
       const shouldUsePayPerCallThankYou = isPayPerCallWindowOpen();
 
       const nextSearch = nextParams.toString() ? `?${nextParams.toString()}` : "";

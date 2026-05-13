@@ -137,25 +137,21 @@ type BenchCallPageProps = {
   ageGroup?: string;
   insuranceGoal?: string;
   leadId?: string;
-  leadEventId?: string;
 };
 
 export default function BenchCallPage({
   ageGroup = "",
   insuranceGoal = "",
   leadId = "",
-  leadEventId = "",
 }: BenchCallPageProps) {
   const ringbaTags = JSON.stringify({
     call5_age_group: ageGroup,
     call5_insurance_goal: insuranceGoal,
     lead_id: leadId,
-    lead_event_id: leadEventId,
   });
   const trackContactClick = () => {
     pushGtmEvent("Contact", {
       event_id: createEventId("contact"),
-      lead_event_id: leadEventId || undefined,
       lead_id: leadId || undefined,
       external_id: leadId || undefined,
       ringba_phone_number: phoneNumber,

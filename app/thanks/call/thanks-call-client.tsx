@@ -11,7 +11,6 @@ export default function ThanksCallClient() {
       ageGroup={searchParams.get("age_group") || ""}
       insuranceGoal={searchParams.get("insurance_goal") || ""}
       leadId={searchParams.get("lead_id") || ""}
-      leadEventId={searchParams.get("event_id") || ""}
     />
   );
 }
