@@ -1,9 +1,16 @@
-"use client";
+﻿"use client";
+
+/* eslint-disable @typescript-eslint/no-unused-vars */
 
 import Image from "next/image";
-import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { inferUsZipFromStateAndPhone } from "@/lib/infer-us-zip";
+import BenchCallPage from "./bench-call-page";
+
+const trustBadges = [
+  { icon: "/media/tax-free.svg", text: "Retiro libre de impuestos" },
+  { icon: "/media/family-protection.svg", text: "Protege a tu familia" },
+  { icon: "/media/minutes.svg", text: "Toma menos de 2 minutos" },
+];
 
 const questionnaireSecuritySeals = [
   {
@@ -13,7 +20,7 @@ const questionnaireSecuritySeals = [
     height: 38,
   },
   {
-    src: "/media/secure-form-better-life.png",
+    src: "/media/secure-call-badge.png",
     alt: "Secure Form",
     width: 136,
     height: 32,
@@ -54,7 +61,38 @@ const introBenefits = [
   },
 ];
 
+const howItWorksSteps = [
+  { number: "1", title: "Te hacemos unas preguntas", description: "para verificar si calificas." },
+  { number: "2", title: "Revisamos tu perfil", description: "y estimamos tu beneficio IUL." },
+  { number: "3", title: "Accede a tu plan", description: "y recibe tu beneficio." },
+];
+
+const metrics = [
+  { value: "73,698", label: "Familias ayudadas en 2026" },
+  { value: "100%", label: "Beneficio familiar protegido" },
+  { value: "$200K+", label: "Potencial en valor acumulado" },
+];
+
+const footerLinks = [
+  { label: "About Us", href: "/" },
+  { label: "Cookie Policy", href: "/privacy" },
+  { label: "Terms Of Use", href: "/terms" },
+  { label: "Partner With Us", href: "/socios" },
+  { label: "Privacy Policy", href: "/privacy" },
+  { label: "Contact", href: "/" },
+  { label: "Sitemap", href: "/" },
+];
+
+const socialLinks = [
+  { label: "Facebook", href: "/", icon: "/media/facebook.png" },
+  { label: "Instagram", href: "https://www.instagram.com/", icon: "/media/instagram.png" },
+  { label: "LinkedIn", href: "/", icon: "/media/linkedin.png" },
+];
+
 const ageOptions = ["25 a 34", "35 a 44", "45 a 54", "55 a 65", "65+"];
+const disqualificationCookieName = "better_life_call5_disqualified";
+const disqualificationCookieMaxAge = 60 * 60 * 24 * 180;
+const callFunnelPagePath = "/call-5";
 const goalOptions = [
   "Seguro de vida",
   "Ahorrar e invertir",
@@ -80,7 +118,8 @@ type FunnelStep =
   | "name"
   | "phone"
   | "email"
-  | "rejected"
+  | "call-page"
+  | "disqualified"
   | "success";
 
 type FunnelAnswers = {
@@ -97,24 +136,10 @@ type FunnelAnswers = {
   detectedState: string;
 };
 
-type PhoneValidationStatus = "idle" | "validating" | "valid" | "invalid";
-
-type ZipLookupResponse = {
-  location?: string | null;
-  state?: string | null;
-  zipCode?: string | null;
-  source?: "zippopotam" | "vercel-ip" | "fallback";
-  fallback?: boolean;
-};
-
 const stepOrder: FunnelStep[] = [
-  "intro",
   "age",
-  "goal",
-  "state",
-  "name",
-  "phone",
-  "success",
+  "call-page",
+  "disqualified",
 ];
 
 const emptyAnswers: FunnelAnswers = {
@@ -130,16 +155,6 @@ const emptyAnswers: FunnelAnswers = {
   email: "",
   detectedState: "",
 };
-
-const deviceStorageKey = "better-life-device-id";
-const deviceCookieName = "bf_iul_device_id";
-const trustedFormScriptId = "trustedform-certify-sdk";
-const trustedFormFieldName = process.env.NEXT_PUBLIC_TRUSTEDFORM_FIELD || "xxTrustedFormCertUrl";
-const deviceCookieDurationDays = 15;
-const ageRejectedCookieName = "bf_age_rejected";
-const ageRejectedCookieDurationDays = 90;
-const ageRejectedHash = "#no-califica";
-const blockedStateName = "New York";
 
 const thankYouHighlights = [
   {
@@ -228,50 +243,6 @@ function formatPhoneDigits(value: string) {
   return chunks.join(" ");
 }
 
-function getOrCreateDeviceId() {
-  if (typeof window === "undefined") return "";
-
-  const existing = window.localStorage.getItem(deviceStorageKey);
-  if (existing) {
-    setDeviceCookie(existing);
-    return existing;
-  }
-
-  const newId = `bm_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
-  window.localStorage.setItem(deviceStorageKey, newId);
-  setDeviceCookie(newId);
-  return newId;
-}
-
-function getTrustedFormCertUrl() {
-  if (typeof document === "undefined") return "";
-
-  const field = document.getElementsByName(trustedFormFieldName)[0] as HTMLInputElement | undefined;
-  return field?.value?.trim() || "";
-}
-
-function setDeviceCookie(deviceId: string) {
-  if (typeof document === "undefined" || !deviceId) return;
-
-  const maxAge = deviceCookieDurationDays * 24 * 60 * 60;
-  document.cookie = `${deviceCookieName}=${encodeURIComponent(deviceId)}; Max-Age=${maxAge}; Path=/; SameSite=Lax`;
-}
-
-function hasAgeRejectedCookie() {
-  if (typeof document === "undefined") return false;
-  return document.cookie
-    .split(";")
-    .map((cookie) => cookie.trim())
-    .includes(`${ageRejectedCookieName}=true`);
-}
-
-function setAgeRejectedCookie() {
-  if (typeof document === "undefined") return;
-
-  const maxAge = ageRejectedCookieDurationDays * 24 * 60 * 60;
-  document.cookie = `${ageRejectedCookieName}=true; Max-Age=${maxAge}; Path=/; SameSite=Lax`;
-}
-
 function getPhoneValidationMessage(value: string) {
   const digits = value.replace(/\D/g, "");
 
@@ -316,33 +287,6 @@ function getZipValidationMessage(value: string) {
   }
 
   return "";
-}
-
-function isResolvedUsZip(
-  data: ZipLookupResponse | null,
-  requestedZipCode: string
-) {
-  return (
-    !!data &&
-    data.source === "zippopotam" &&
-    data.fallback === false &&
-    data.zipCode === requestedZipCode &&
-    !!data.state &&
-    stateOptions.includes(data.state)
-  );
-}
-
-function isBlockedState(state?: string | null) {
-  return state === blockedStateName;
-}
-
-function buildLocationBackup(state?: string | null, phone?: string | null) {
-  const inferred = inferUsZipFromStateAndPhone(state, phone);
-  return {
-    zipCode: inferred.zipCode,
-    locationText: inferred.location,
-    state: inferred.state || state || "",
-  };
 }
 
 function optionButtonClass(isSelected: boolean, isRecommended = false) {
@@ -560,6 +504,61 @@ function QuestionIcon({ className = "h-[1em] w-[1em]" }: { className?: string })
   );
 }
 
+function IntroBenefitIcon({
+  icon,
+  className = "h-[26px] w-[26px]",
+}: {
+  icon: (typeof introBenefits)[number]["icon"];
+  className?: string;
+}) {
+  if (icon === "growth") {
+    return (
+      <svg aria-hidden="true" viewBox="0 0 24 24" className={className} fill="none">
+        <rect x="3.5" y="4.5" width="17" height="15" rx="3" fill="#ece7ff" />
+        <path d="M6.5 16.5 10 13l2.4 2.2 5.1-5.2" stroke="#3b82f6" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M6.5 7.5v9M11.5 7.5v9M16.5 7.5v9" stroke="#c4b5fd" strokeWidth="1.2" strokeLinecap="round" />
+      </svg>
+    );
+  }
+
+  if (icon === "tax") {
+    return (
+      <svg aria-hidden="true" viewBox="0 0 24 24" className={className} fill="none">
+        <circle cx="12" cy="12" r="7.8" stroke="#ff4d67" strokeWidth="2.2" />
+        <path d="M7 7 17 17" stroke="#ff4d67" strokeWidth="2.2" strokeLinecap="round" />
+      </svg>
+    );
+  }
+
+  if (icon === "liquidity") {
+    return (
+      <svg aria-hidden="true" viewBox="0 0 24 24" className={className} fill="none">
+        <path d="M4 9.3 12 4l8 5.3" stroke="#8b7aa8" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M5.5 10h13" stroke="#8b7aa8" strokeWidth="1.7" strokeLinecap="round" />
+        <path d="M7.2 10v7.3M12 10v7.3M16.8 10v7.3" stroke="#8b7aa8" strokeWidth="1.7" strokeLinecap="round" />
+        <path d="M4.5 18h15" stroke="#8b7aa8" strokeWidth="1.7" strokeLinecap="round" />
+      </svg>
+    );
+  }
+
+  if (icon === "protection") {
+    return (
+      <svg aria-hidden="true" viewBox="0 0 24 24" className={className} fill="none">
+        <path d="M12 3.8c2.8 1.9 5.8 2.4 8 2.5v6c0 4.5-3.2 7.9-8 9.5-4.8-1.6-8-5-8-9.5v-6c2.2-.1 5.2-.6 8-2.5Z" fill="#5bb2ff" stroke="#4477e6" strokeWidth="1.5" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" className={className} fill="none">
+      <rect x="5" y="4.5" width="14" height="15" rx="2.5" fill="#f2e8ff" />
+      <path d="M12 7.2v5.4M9.3 9.9h5.4" stroke="#ff4db8" strokeWidth="1.8" strokeLinecap="round" />
+      <path d="M8.5 15.8h7" stroke="#c084fc" strokeWidth="1.6" strokeLinecap="round" />
+      <path d="M8.5 18.2h5.2" stroke="#c084fc" strokeWidth="1.6" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 function PhonePadIcon({ className = "h-[1em] w-[1em]" }: { className?: string }) {
   return (
     <svg aria-hidden="true" viewBox="0 0 24 24" className={className} fill="none">
@@ -573,6 +572,14 @@ function PhonePadIcon({ className = "h-[1em] w-[1em]" }: { className?: string })
       <rect x="8" y="12.5" width="2.2" height="2.2" rx=".4" fill="#4dd7ff" />
       <rect x="11" y="12.5" width="2.2" height="2.2" rx=".4" fill="#ff9b44" />
       <rect x="14" y="12.5" width="2.2" height="2.2" rx=".4" fill="#ffd84d" />
+    </svg>
+  );
+}
+
+function CallOutlineIcon({ className = "h-[1em] w-[1em]" }: { className?: string }) {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 32 32" className={className} fill="currentColor">
+      <path d="M23.407 30.394c-2.431 0-8.341-3.109-13.303-9.783-4.641-6.242-6.898-10.751-6.898-13.785 0-2.389 1.65-3.529 2.536-4.142l0.219-0.153c0.979-0.7 2.502-0.927 3.086-0.927 1.024 0 1.455 0.599 1.716 1.121 0.222 0.442 2.061 4.39 2.247 4.881 0.286 0.755 0.192 1.855-0.692 2.488l-0.155 0.108c-0.439 0.304-1.255 0.869-1.368 1.557-0.055 0.334 0.057 0.684 0.342 1.068 1.423 1.918 5.968 7.55 6.787 8.314 0.642 0.6 1.455 0.685 2.009 0.218 0.573-0.483 0.828-0.768 0.83-0.772l0.059-0.057c0.048-0.041 0.496-0.396 1.228-0.396 0.528 0 1.065 0.182 1.596 0.541 1.378 0.931 4.487 3.011 4.487 3.011l0.05 0.038c0.398 0.341 0.973 1.323 0.302 2.601-0.695 1.327-2.85 4.066-5.079 4.066zM9.046 2.672c-0.505 0-1.746 0.213-2.466 0.728l-0.232 0.162c-0.827 0.572-2.076 1.435-2.076 3.265 0 2.797 2.188 7.098 6.687 13.149 4.914 6.609 10.532 9.353 12.447 9.353 1.629 0 3.497-2.276 4.135-3.494 0.392-0.748 0.071-1.17-0.04-1.284-0.36-0.241-3.164-2.117-4.453-2.988-0.351-0.238-0.688-0.358-0.999-0.358-0.283 0-0.469 0.1-0.532 0.14-0.104 0.111-0.39 0.405-0.899 0.833-0.951 0.801-2.398 0.704-3.424-0.254-0.923-0.862-5.585-6.666-6.916-8.459-0.46-0.62-0.641-1.252-0.538-1.877 0.187-1.133 1.245-1.866 1.813-2.26l0.142-0.099c0.508-0.363 0.4-1.02 0.316-1.242-0.157-0.414-1.973-4.322-2.203-4.781-0.188-0.376-0.336-0.533-0.764-0.533z" />
     </svg>
   );
 }
@@ -635,93 +642,141 @@ function UnsureIcon({ className = "h-[1em] w-[1em]" }: { className?: string }) {
   );
 }
 
-function PhoneStatusIcon({ status }: { status: PhoneValidationStatus }) {
-  if (status === "validating") {
-    return (
-      <svg
-        aria-hidden="true"
-        viewBox="0 0 24 24"
-        className="h-[18px] w-[18px] animate-spin text-[#94a3b8]"
-        fill="none"
-      >
-        <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="3" opacity="0.24" />
-        <path d="M20 12a8 8 0 0 0-8-8" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
-      </svg>
-    );
-  }
+function CalendarSmallIcon({ className = "h-[1em] w-[1em]" }: { className?: string }) {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" className={className} fill="none">
+      <rect x="4" y="5" width="16" height="15" rx="3" fill="currentColor" opacity="0.14" />
+      <path d="M8 3v4M16 3v4M5 9h14" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" />
+      <path d="M8 13h2M12 13h2M16 13h1M8 16h2M12 16h2" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+    </svg>
+  );
+}
 
-  if (status === "valid") {
-    return (
-      <svg
-        aria-hidden="true"
-        viewBox="0 0 24 24"
-        className="h-[20px] w-[20px] text-[#16a34a]"
-        fill="none"
-      >
-        <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" />
-        <path d="m7.8 12.2 2.6 2.6 5.8-6" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-    );
-  }
+function hasDisqualificationCookie() {
+  if (typeof document === "undefined") return false;
 
-  if (status === "invalid") {
-    return (
-      <svg
-        aria-hidden="true"
-        viewBox="0 0 24 24"
-        className="h-[20px] w-[20px] text-[#dc2626]"
-        fill="none"
-      >
-        <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" />
-        <path d="m8.5 8.5 7 7M15.5 8.5l-7 7" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" />
-      </svg>
-    );
+  return document.cookie
+    .split(";")
+    .some((cookie) => cookie.trim().startsWith(`${disqualificationCookieName}=1`));
+}
+
+function setDisqualificationCookie() {
+  document.cookie = `${disqualificationCookieName}=1; Max-Age=${disqualificationCookieMaxAge}; Path=/; SameSite=Lax`;
+}
+
+function clearDisqualificationCookie() {
+  document.cookie = `${disqualificationCookieName}=; Max-Age=0; Path=/; SameSite=Lax`;
+}
+
+function trackCallFunnelEvent(eventName: "ViewContent" | "Contact", currentStep: FunnelStep) {
+  const trackingWindow = window as Window & {
+    fbq?: (command: string, event: string, params?: Record<string, string>) => void;
+    ttq?: { track?: (event: string, params?: Record<string, string>) => void };
+  };
+  const eventParams = {
+    page: "/call-5",
+    step: currentStep,
+    content_id: "call_iul",
+    content_type: "product",
+    content_name: "Seguro IUL Call Funnel",
+  };
+
+  trackingWindow.fbq?.("track", eventName, eventParams);
+  trackingWindow.ttq?.track?.(eventName, eventParams);
+  sendMetaPixelBeacon(eventName);
+}
+
+function sendMetaPixelBeacon(eventName: "PageView" | "ViewContent" | "Contact") {
+  const beacon = new window.Image();
+  beacon.src = `https://www.facebook.com/tr?id=1556647345340828&ev=${eventName}&noscript=1`;
+}
+
+function trackCallFunnelPageView() {
+  const trackingWindow = window as Window & {
+    __callFunnelPageViews?: Record<string, boolean>;
+    fbq?: (command: string, event: string, params?: Record<string, string>) => void;
+    ttq?: { page?: (params?: Record<string, string>) => void };
+  };
+
+  if (trackingWindow.__callFunnelPageViews?.[callFunnelPagePath]) return;
+
+  trackingWindow.__callFunnelPageViews = trackingWindow.__callFunnelPageViews || {};
+  trackingWindow.__callFunnelPageViews[callFunnelPagePath] = true;
+  trackingWindow.fbq?.("track", "PageView", { page: callFunnelPagePath, step: "age" });
+  trackingWindow.ttq?.page?.({
+    content_id: "call_iul",
+    content_type: "product",
+    content_name: "Seguro IUL Call Funnel",
+  });
+  sendMetaPixelBeacon("PageView");
+}
+
+function CallFunnelPixels({ currentStep }: { currentStep: FunnelStep }) {
+  const trackedViewStepsRef = useRef<Set<FunnelStep>>(new Set());
+  const trackedPageViewRef = useRef(false);
+
+  useEffect(() => {
+    if (currentStep !== "age") return;
+    if (trackedPageViewRef.current) return;
+
+    trackedPageViewRef.current = true;
+    window.setTimeout(trackCallFunnelPageView, 1200);
+  }, [currentStep]);
+
+  useEffect(() => {
+    if (currentStep === "age" || currentStep === "disqualified") return;
+    if (trackedViewStepsRef.current.has(currentStep)) return;
+
+    trackedViewStepsRef.current.add(currentStep);
+    trackCallFunnelEvent("ViewContent", currentStep);
+  }, [currentStep]);
+
+  useEffect(() => {
+    const handleCallClick = (event: MouseEvent) => {
+      const target = event.target as Element | null;
+      const callLink = target?.closest?.('a[href^="tel:"]');
+
+      if (!callLink) return;
+      trackCallFunnelEvent("Contact", currentStep);
+    };
+
+    document.addEventListener("click", handleCallClick);
+    return () => document.removeEventListener("click", handleCallClick);
+  }, [currentStep]);
+
+  if (currentStep === "disqualified") {
+    return null;
   }
 
   return null;
 }
 
 export default function Home() {
-  const [currentStep, setCurrentStep] = useState<FunnelStep>(() =>
-    hasAgeRejectedCookie() ? "rejected" : "age",
-  );
-  const [, setSlideDirection] = useState<"forward" | "backward">("forward");
+  const [currentStep, setCurrentStep] = useState<FunnelStep>("age");
+  const [slideDirection, setSlideDirection] = useState<"forward" | "backward">("forward");
   const [panelKey, setPanelKey] = useState(0);
   const [isTransitioningOut, setIsTransitioningOut] = useState(false);
   const [answers, setAnswers] = useState<FunnelAnswers>(emptyAnswers);
-  const [defaultLocationText, setDefaultLocationText] = useState(emptyAnswers.locationText);
-  const [isLookingUpZip, setIsLookingUpZip] = useState(false);
-  const [hasLoadedGeo, setHasLoadedGeo] = useState(false);
   const [phoneError, setPhoneError] = useState("");
   const [emailError, setEmailError] = useState("");
   const [zipError, setZipError] = useState("");
   const [submitError, setSubmitError] = useState("");
-  const [isSubmittingLead, setIsSubmittingLead] = useState(false);
-  const [isPhoneValidating, setIsPhoneValidating] = useState(false);
-  const [hasBlurredPhone, setHasBlurredPhone] = useState(false);
-  const [leadToken, setLeadToken] = useState("");
+  const [isFinishingFlow, setIsFinishingFlow] = useState(false);
+  const [isDisqualificationCheckComplete, setIsDisqualificationCheckComplete] = useState(false);
   const transitionTimeoutRef = useRef<number | null>(null);
-  const phoneValidationTimeoutRef = useRef<number | null>(null);
 
   const isSuccessPage = currentStep === "success";
-  const isRejectedPage = currentStep === "rejected";
-  const isQuestionnaire = currentStep !== "intro" && !isRejectedPage;
+  const isQuestionnaire = currentStep !== "intro";
   const successHash = "#gracias";
   const recommendedAgeOption = answers.ageGroup ? "" : "35 a 44";
-  const recommendedGoalOption = answers.insuranceGoal ? "" : "Ahorrar e invertir";
+  const recommendedGoalOption = "";
   const detectedUsState = stateOptions.includes(answers.detectedState)
     ? answers.detectedState
     : "";
   const resolvedUsState = stateOptions.includes(answers.state) ? answers.state : "";
   const shouldAskZipCode = !resolvedUsState && !detectedUsState;
-  const visibleQuestionSteps = shouldAskZipCode
-    ? (["age", "goal", "state", "name", "phone"] as FunnelStep[])
-    : (["age", "goal", "name", "phone"] as FunnelStep[]);
+  const visibleQuestionSteps = ["age", "call-page"] as FunnelStep[];
   const currentQuestionIndex = visibleQuestionSteps.indexOf(currentStep);
-  const progressLabel =
-    currentQuestionIndex >= 0
-      ? `${currentQuestionIndex + 1} de ${visibleQuestionSteps.length}`
-      : "";
   const progress =
     currentQuestionIndex >= 0
       ? ((currentQuestionIndex + 1) / visibleQuestionSteps.length) * 100
@@ -731,32 +786,34 @@ export default function Home() {
     : "animate-[survey-question-in_0.42s_cubic-bezier(0.22,0.61,0.36,1)]";
 
   const normalizedPhone = answers.phoneNumber.replace(/\D/g, "");
-  const shouldShowPhoneValidation = normalizedPhone.length >= 10 || (hasBlurredPhone && normalizedPhone.length > 0);
-  const livePhoneValidationMessage = shouldShowPhoneValidation
-    ? getPhoneValidationMessage(normalizedPhone)
-    : "";
-  const phoneValidationStatus: PhoneValidationStatus = !shouldShowPhoneValidation
-    ? "idle"
-    : isPhoneValidating
-      ? "validating"
-      : livePhoneValidationMessage
-        ? "invalid"
-        : "valid";
-  const phoneBorderClass =
-    phoneValidationStatus === "invalid" || phoneError
-      ? "border-[#e11d48] focus:border-[#e11d48]"
-      : phoneValidationStatus === "valid"
-        ? "border-[#16a34a] focus:border-[#16a34a]"
-        : "border-[#9c9c9c] focus:border-[var(--brand)]";
-  const visiblePhoneError =
-    phoneValidationStatus === "validating"
-      ? ""
-      : phoneError || (phoneValidationStatus === "invalid" ? livePhoneValidationMessage : "");
 
   useEffect(() => {
-    if (hasAgeRejectedCookie()) {
-      setCurrentStep("rejected");
+    const currentUrl = new URL(window.location.href);
+    const shouldResetDisqualification =
+      currentUrl.searchParams.get("reset_disqualification") === "1";
+    const finishDisqualificationCheck = () => {
+      window.queueMicrotask(() => {
+        setIsDisqualificationCheckComplete(true);
+      });
+    };
+
+    if (shouldResetDisqualification) {
+      clearDisqualificationCookie();
+      currentUrl.searchParams.delete("reset_disqualification");
+      window.history.replaceState(null, "", `${currentUrl.pathname}${currentUrl.search}${currentUrl.hash}`);
+      finishDisqualificationCheck();
+      return;
     }
+
+    if (hasDisqualificationCookie()) {
+      window.queueMicrotask(() => {
+        setCurrentStep("disqualified");
+        setPanelKey((prev) => prev + 1);
+      });
+      window.history.replaceState(null, "", window.location.href);
+    }
+
+    finishDisqualificationCheck();
   }, []);
 
   useEffect(() => {
@@ -764,196 +821,11 @@ export default function Home() {
       if (transitionTimeoutRef.current !== null) {
         window.clearTimeout(transitionTimeoutRef.current);
       }
-      if (phoneValidationTimeoutRef.current !== null) {
-        window.clearTimeout(phoneValidationTimeoutRef.current);
-      }
     };
   }, []);
-
-  useEffect(() => {
-    if (phoneValidationTimeoutRef.current !== null) {
-      window.clearTimeout(phoneValidationTimeoutRef.current);
-      phoneValidationTimeoutRef.current = null;
-    }
-
-    if (!shouldShowPhoneValidation) {
-      setIsPhoneValidating(false);
-      setPhoneError("");
-      return;
-    }
-
-    setIsPhoneValidating(true);
-    phoneValidationTimeoutRef.current = window.setTimeout(() => {
-      phoneValidationTimeoutRef.current = null;
-      setIsPhoneValidating(false);
-      setPhoneError(getPhoneValidationMessage(normalizedPhone));
-    }, 420);
-
-    return () => {
-      if (phoneValidationTimeoutRef.current !== null) {
-        window.clearTimeout(phoneValidationTimeoutRef.current);
-        phoneValidationTimeoutRef.current = null;
-      }
-    };
-  }, [normalizedPhone, shouldShowPhoneValidation]);
-
-  useEffect(() => {
-    if (document.getElementById(trustedFormScriptId)) return;
-
-    const trustedFormScript = document.createElement("script");
-    trustedFormScript.id = trustedFormScriptId;
-    trustedFormScript.type = "text/javascript";
-    trustedFormScript.async = true;
-    trustedFormScript.src = `${window.location.protocol}//api.trustedform.com/trustedform.js?field=${encodeURIComponent(
-      trustedFormFieldName,
-    )}&use_tagged_consent=true&l=${Date.now()}${Math.random()}`;
-
-    const firstScript = document.getElementsByTagName("script")[0];
-    firstScript?.parentNode?.insertBefore(trustedFormScript, firstScript);
-  }, []);
-
-  useEffect(() => {
-    if (isRejectedPage) return;
-
-    let isCancelled = false;
-
-    async function hydrateAreaFromIp() {
-      try {
-        const response = await fetch("/api/location", { cache: "no-store" });
-        if (!response.ok) return;
-
-        const data = (await response.json()) as {
-          location?: string;
-          zipCode?: string | null;
-          state?: string | null;
-        };
-
-        if (isCancelled || !data.location) return;
-
-        const detectedState = data.state && stateOptions.includes(data.state) ? data.state : "";
-        const detectedZip = data.zipCode && /^\d{5}$/.test(data.zipCode) ? data.zipCode : "";
-        const backup = detectedState ? buildLocationBackup(detectedState) : null;
-        const resolvedZipCode = detectedZip || backup?.zipCode || "";
-        const resolvedLocationText = data.location || backup?.locationText || emptyAnswers.locationText;
-
-        if (isBlockedState(detectedState)) {
-          rejectByNewYork();
-          return;
-        }
-
-        setDefaultLocationText((prev) => prev || resolvedLocationText);
-        setAnswers((prev) => ({
-          ...prev,
-          zipCode: prev.zipCode || resolvedZipCode,
-          locationText: prev.locationText || resolvedLocationText,
-          state: prev.state || detectedState || backup?.state || "",
-          detectedState: prev.detectedState || detectedState,
-        }));
-      } catch {
-        // The ZIP step is the fallback if Vercel geolocation is unavailable.
-      } finally {
-        if (!isCancelled) setHasLoadedGeo(true);
-      }
-    }
-
-    void hydrateAreaFromIp();
-
-    return () => {
-      isCancelled = true;
-    };
-  }, [isRejectedPage]);
-
-  useEffect(() => {
-    if (isRejectedPage) return;
-    if (!hasLoadedGeo) return;
-
-    const zipCode = answers.zipCode;
-
-    if (zipCode.length === 0) {
-      setAnswers((prev) => ({ ...prev, locationText: defaultLocationText }));
-      setIsLookingUpZip(false);
-      return;
-    }
-
-    if (zipCode.length < 5) {
-      setAnswers((prev) => ({
-        ...prev,
-        locationText: defaultLocationText,
-        state: prev.detectedState || "",
-      }));
-      setIsLookingUpZip(false);
-      return;
-    }
-
-    const controller = new AbortController();
-    const timeoutId = window.setTimeout(async () => {
-      try {
-        setIsLookingUpZip(true);
-
-        const response = await fetch(`/api/zip/${zipCode}`, {
-          signal: controller.signal,
-          cache: "no-store",
-        });
-
-        if (!response.ok) {
-          setAnswers((prev) => ({
-            ...prev,
-            locationText: defaultLocationText,
-            state: prev.state || prev.detectedState,
-          }));
-          return;
-        }
-
-        const data = (await response.json()) as ZipLookupResponse;
-
-        if (isResolvedUsZip(data, zipCode)) {
-          if (isBlockedState(data.state)) {
-            rejectByNewYork();
-            return;
-          }
-
-          setAnswers((prev) => ({
-            ...prev,
-            locationText: data.location || defaultLocationText,
-            state: data.state || prev.state || prev.detectedState,
-          }));
-          return;
-        }
-
-        setAnswers((prev) => ({
-          ...prev,
-          locationText: defaultLocationText,
-          state: prev.detectedState || "",
-        }));
-      } catch (error) {
-        if ((error as Error).name !== "AbortError") {
-          setAnswers((prev) => ({
-            ...prev,
-            locationText: defaultLocationText,
-            state: prev.detectedState || "",
-          }));
-        }
-      } finally {
-        if (!controller.signal.aborted) {
-          setIsLookingUpZip(false);
-        }
-      }
-    }, 180);
-
-    return () => {
-      controller.abort();
-      window.clearTimeout(timeoutId);
-    };
-  }, [answers.zipCode, defaultLocationText, hasLoadedGeo, isRejectedPage]);
 
   useEffect(() => {
     const guardSuccessHash = () => {
-      if (hasAgeRejectedCookie()) {
-        setCurrentStep("rejected");
-        window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}${ageRejectedHash}`);
-        return;
-      }
-
       if (window.location.hash !== successHash) return;
       if (currentStep === "success") return;
 
@@ -967,42 +839,7 @@ export default function Home() {
     return () => window.removeEventListener("hashchange", guardSuccessHash);
   }, [currentStep, successHash]);
 
-  useEffect(() => {
-    if (!isRejectedPage) return;
-
-    const rejectedUrl = `${window.location.pathname}${window.location.search}${ageRejectedHash}`;
-    if (window.location.hash !== ageRejectedHash) {
-      window.history.replaceState({ bfAgeRejected: true }, "", rejectedUrl);
-    }
-
-    const keepRejectedView = () => {
-      if (!hasAgeRejectedCookie()) return;
-      setCurrentStep("rejected");
-      if (window.location.hash !== ageRejectedHash) {
-        window.history.replaceState({ bfAgeRejected: true }, "", rejectedUrl);
-      }
-    };
-
-    window.addEventListener("popstate", keepRejectedView);
-    window.addEventListener("hashchange", keepRejectedView);
-    return () => {
-      window.removeEventListener("popstate", keepRejectedView);
-      window.removeEventListener("hashchange", keepRejectedView);
-    };
-  }, [isRejectedPage]);
-
-  useEffect(() => {
-    if (isRejectedPage) return;
-    if (currentStep !== "state" || shouldAskZipCode) return;
-    transitionTo("name", "forward");
-  }, [currentStep, isRejectedPage, shouldAskZipCode]);
-
   function transitionTo(nextStep: FunnelStep, direction: "forward" | "backward") {
-    if (isRejectedPage || hasAgeRejectedCookie()) {
-      setCurrentStep("rejected");
-      return;
-    }
-
     setSlideDirection(direction);
     setIsTransitioningOut(true);
     if (transitionTimeoutRef.current !== null) {
@@ -1018,17 +855,16 @@ export default function Home() {
   }
 
   function goBack() {
-    if (isRejectedPage || hasAgeRejectedCookie()) {
-      setCurrentStep("rejected");
-      return;
-    }
-
     if (currentStep === "age") {
       return;
     }
 
+    if (currentStep === "disqualified") {
+      return;
+    }
+
     if (currentStep === "name" && !shouldAskZipCode) {
-      transitionTo("goal", "backward");
+      transitionTo("age", "backward");
       return;
     }
 
@@ -1038,63 +874,7 @@ export default function Home() {
   }
 
   function startQuestionnaire() {
-    if (hasAgeRejectedCookie()) {
-      setCurrentStep("rejected");
-      return;
-    }
-
     transitionTo("age", "forward");
-  }
-
-  function rejectByAge() {
-    setAgeRejectedCookie();
-
-    if (transitionTimeoutRef.current !== null) {
-      window.clearTimeout(transitionTimeoutRef.current);
-      transitionTimeoutRef.current = null;
-    }
-
-    setAnswers((prev) => ({ ...prev, ageGroup: "65+" }));
-    setSubmitError("");
-    setPhoneError("");
-    setEmailError("");
-    setZipError("");
-    setIsSubmittingLead(false);
-    setIsLookingUpZip(false);
-    setIsTransitioningOut(false);
-    setCurrentStep("rejected");
-    setPanelKey((prev) => prev + 1);
-    window.history.replaceState(
-      { bfAgeRejected: true },
-      "",
-      `${window.location.pathname}${window.location.search}${ageRejectedHash}`,
-    );
-    window.location.replace("/iul-v4/rechazo");
-  }
-
-  function rejectByNewYork() {
-    setAgeRejectedCookie();
-
-    if (transitionTimeoutRef.current !== null) {
-      window.clearTimeout(transitionTimeoutRef.current);
-      transitionTimeoutRef.current = null;
-    }
-
-    setSubmitError("");
-    setPhoneError("");
-    setEmailError("");
-    setZipError("");
-    setIsSubmittingLead(false);
-    setIsLookingUpZip(false);
-    setIsTransitioningOut(false);
-    setCurrentStep("rejected");
-    setPanelKey((prev) => prev + 1);
-    window.history.replaceState(
-      { bfAgeRejected: true },
-      "",
-      `${window.location.pathname}${window.location.search}${ageRejectedHash}`,
-    );
-    window.location.replace("/iul-v4/rechazo");
   }
 
   function handleDirectChoice<K extends keyof FunnelAnswers>(
@@ -1102,28 +882,24 @@ export default function Home() {
     value: FunnelAnswers[K],
     nextStep: FunnelStep
   ) {
-    if (isRejectedPage || hasAgeRejectedCookie()) {
-      setCurrentStep("rejected");
-      return;
-    }
-
-    if (field === "ageGroup" && value === "65+") {
-      rejectByAge();
-      return;
-    }
-
     setAnswers((prev) => ({ ...prev, [field]: value }));
     window.setTimeout(() => {
       transitionTo(nextStep, "forward");
     }, 120);
   }
 
-  async function handleZipCodeContinue() {
-    if (isRejectedPage || hasAgeRejectedCookie()) {
-      setCurrentStep("rejected");
-      return;
+  function handleAgeChoice(option: string) {
+    setAnswers((prev) => ({ ...prev, ageGroup: option }));
+    if (option === "65+") {
+      setDisqualificationCookie();
+      window.history.replaceState(null, "", window.location.href);
     }
+    window.setTimeout(() => {
+      transitionTo(option === "65+" ? "disqualified" : "call-page", "forward");
+    }, 120);
+  }
 
+  function handleZipCodeContinue() {
     const zipCode = normalizeZipCode(answers.zipCode);
     const zipValidationMessage = getZipValidationMessage(zipCode);
 
@@ -1133,97 +909,11 @@ export default function Home() {
     }
 
     setZipError("");
-    setIsLookingUpZip(true);
-
-    try {
-      const response = await fetch(`/api/zip/${zipCode}`, {
-        cache: "no-store",
-      });
-
-      if (!response.ok) {
-        throw new Error("Ingresa un ZIP code real de EE.UU.");
-      }
-
-      const data = (await response.json()) as ZipLookupResponse;
-
-      if (!isResolvedUsZip(data, zipCode)) {
-        throw new Error("Ingresa un ZIP code real de EE.UU.");
-      }
-
-      if (isBlockedState(data.state)) {
-        rejectByNewYork();
-        return;
-      }
-
-      setAnswers((prev) => ({
-        ...prev,
-        zipCode,
-        locationText: data.location || defaultLocationText,
-        state: data.state || prev.state,
-      }));
-
-      transitionTo("name", "forward");
-    } catch (error) {
-      const message =
-        error instanceof Error && error.message
-          ? error.message
-          : "No pudimos validar ese ZIP code. Intenta otro.";
-
-      setAnswers((prev) => ({
-        ...prev,
-        zipCode,
-        locationText: defaultLocationText,
-        state: prev.detectedState || "",
-      }));
-      setZipError(message);
-    } finally {
-      setIsLookingUpZip(false);
-    }
+    setAnswers((prev) => ({ ...prev, zipCode }));
+    transitionTo("name", "forward");
   }
 
-  async function prepareLeadToken() {
-    if (leadToken) return leadToken;
-
-    const tokenResponse = await fetch("/api/lead-token", { cache: "no-store" });
-
-    if (!tokenResponse.ok) {
-      throw new Error("No pudimos preparar el envio seguro. Intenta nuevamente.");
-    }
-
-    const tokenBody = (await tokenResponse.json().catch(() => null)) as { token?: string } | null;
-    const nextLeadToken = tokenBody?.token;
-
-    if (!nextLeadToken) {
-      throw new Error("No pudimos preparar el envio seguro. Intenta nuevamente.");
-    }
-
-    setLeadToken(nextLeadToken);
-    return nextLeadToken;
-  }
-
-  async function handleNameContinue() {
-    if (!answers.firstName.trim() || !answers.lastName.trim()) return;
-
-    setSubmitError("");
-    transitionTo("phone", "forward");
-
-    try {
-      await prepareLeadToken();
-    } catch (error) {
-      const message =
-        error instanceof Error && error.message
-          ? error.message
-          : "No pudimos preparar el envio seguro. Intenta nuevamente.";
-      setSubmitError(message);
-    }
-  }
-
-  async function submitLead() {
-    if (isRejectedPage || hasAgeRejectedCookie()) {
-      setCurrentStep("rejected");
-      return;
-    }
-
+  function finishVisualFlow() {
     if (!answers.firstName.trim() || !answers.lastName.trim()) return;
 
     const phoneValidationMessage = getPhoneValidationMessage(normalizedPhone);
@@ -1240,156 +930,17 @@ export default function Home() {
     setPhoneError("");
     setEmailError("");
     setSubmitError("");
-    setIsSubmittingLead(true);
+    setIsFinishingFlow(true);
 
-    try {
-      let resolvedZipCode = answers.zipCode;
-      let resolvedLocationText = answers.locationText || defaultLocationText;
-      let resolvedState = answers.state || answers.detectedState;
-
-      if (!resolvedState || !resolvedZipCode || !resolvedLocationText) {
-        try {
-          const locationResponse = await fetch("/api/location", { cache: "no-store" });
-
-          if (locationResponse.ok) {
-            const locationData = (await locationResponse.json()) as {
-              location?: string;
-              zipCode?: string | null;
-              state?: string | null;
-            };
-
-            if (!resolvedState && locationData.state && stateOptions.includes(locationData.state)) {
-              resolvedState = locationData.state;
-            }
-
-            if (!resolvedZipCode && locationData.zipCode && /^\d{5}$/.test(locationData.zipCode)) {
-              resolvedZipCode = locationData.zipCode;
-            }
-
-            if (!resolvedLocationText && locationData.location) {
-              resolvedLocationText = locationData.location;
-            }
-          }
-        } catch {
-          // Continue to deterministic backups below.
-        }
-      }
-
-      if (resolvedState && (!resolvedZipCode || !resolvedLocationText)) {
-        const backup = buildLocationBackup(resolvedState, normalizedPhone);
-        resolvedZipCode = resolvedZipCode || backup.zipCode;
-        resolvedLocationText = resolvedLocationText || backup.locationText;
-        resolvedState = resolvedState || backup.state;
-      }
-
-      if (resolvedZipCode && (!resolvedState || !resolvedLocationText)) {
-        try {
-          const zipResponse = await fetch(`/api/zip/${resolvedZipCode}`, { cache: "no-store" });
-          if (zipResponse.ok) {
-            const zipData = (await zipResponse.json()) as ZipLookupResponse;
-            if (isResolvedUsZip(zipData, resolvedZipCode)) {
-              resolvedState = resolvedState || zipData.state || "";
-              resolvedLocationText = resolvedLocationText || zipData.location || "";
-            }
-          }
-        } catch {
-          // Keep any already resolved backup values.
-        }
-      }
-
-      if (!resolvedState || !resolvedZipCode || !resolvedLocationText) {
-        setSubmitError("Necesitamos confirmar tu estado para completar la solicitud.");
-        transitionTo("state", "backward");
-        return;
-      }
-
-      const completedAnswers = {
-        ...answers,
-        zipCode: resolvedZipCode,
-        locationText: resolvedLocationText,
-        state: resolvedState,
-        detectedState: answers.detectedState || resolvedState,
-      };
-      const hasCompleteLeadData = [
-        completedAnswers.ageGroup,
-        completedAnswers.insuranceGoal,
-        completedAnswers.state,
-        completedAnswers.firstName.trim(),
-        completedAnswers.lastName.trim(),
-        normalizedPhone,
-        completedAnswers.email.trim(),
-        completedAnswers.locationText,
-        completedAnswers.zipCode,
-      ].every(Boolean);
-
-      if (!hasCompleteLeadData) {
-        setSubmitError("Necesitamos completar tu ubicaciÃ³n para enviar la solicitud.");
-        transitionTo("state", "backward");
-        return;
-      }
-
-      setAnswers(completedAnswers);
-
-      const cleanedAnswers = Object.fromEntries(
-        Object.entries({
-          ageGroup: completedAnswers.ageGroup,
-          insuranceGoal: completedAnswers.insuranceGoal,
-          state: completedAnswers.state,
-          firstName: completedAnswers.firstName.trim(),
-          lastName: completedAnswers.lastName.trim(),
-          phoneNumber: normalizedPhone,
-          email: completedAnswers.email.trim(),
-          locationText: completedAnswers.locationText,
-          zipCode: completedAnswers.zipCode,
-        }).filter(([, value]) => value !== "" && value != null)
-      );
-      const preparedLeadToken = await prepareLeadToken();
-
-      const response = await fetch("/api/lead", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-lead-token": preparedLeadToken,
-        },
-        body: JSON.stringify({
-          page: "/iul-v4",
-          answers: cleanedAnswers,
-          meta: {
-            deviceId: getOrCreateDeviceId(),
-            trustedFormCertUrl: getTrustedFormCertUrl(),
-          },
-        }),
-      });
-
-      if (!response.ok) {
-        const errorBody = (await response.json().catch(() => null)) as { error?: string } | null;
-        throw new Error(errorBody?.error || "No pudimos enviar tu solicitud ahora mismo.");
-      }
-
-      const responseBody = (await response.json().catch(() => null)) as { leadId?: string } | null;
-      const leadId = responseBody?.leadId;
-      const nextParams = new URLSearchParams(window.location.search);
-      if (leadId) {
-        nextParams.set("lead_id", leadId);
-      }
-      const nextSearch = nextParams.toString() ? `?${nextParams.toString()}` : "";
-
+    window.setTimeout(() => {
       window.history.replaceState(
         null,
         "",
-        `${window.location.pathname}${nextSearch}${successHash}`,
+        `${window.location.pathname}${window.location.search}${successHash}`,
       );
-      setLeadToken("");
       transitionTo("success", "forward");
-    } catch (error) {
-      const message =
-        error instanceof Error && error.message
-          ? error.message
-          : "No pudimos enviar tu solicitud ahora mismo. Intenta nuevamente.";
-      setSubmitError(message);
-    } finally {
-      setIsSubmittingLead(false);
-    }
+      setIsFinishingFlow(false);
+    }, 250);
   }
 
   function renderProgress() {
@@ -1412,28 +963,6 @@ export default function Home() {
           />
         ))}
       </div>
-    );
-  }
-
-  function renderRejectedPage() {
-    return (
-      <section
-        className="mx-auto flex min-h-[calc(100vh-120px)] w-full max-w-[760px] items-center justify-center px-4 py-10 text-center"
-        style={{ fontFamily: '"Montserrat", "HurmeGeo", Arial, sans-serif' }}
-      >
-        <div className="w-full rounded-[18px] border border-[#dbe7f5] bg-white px-6 py-10 shadow-[0_18px_45px_rgba(18,31,53,0.12)] md:px-10 md:py-12">
-          <div className="mx-auto flex h-[58px] w-[58px] items-center justify-center rounded-full bg-[#eef6ff] text-[var(--brand)]">
-            <ShieldCheckIcon className="h-[28px] w-[28px]" />
-          </div>
-          <h1 className="mx-auto mt-6 max-w-[560px] text-[28px] font-extrabold leading-[1.14] tracking-[-0.04em] text-[#101820] md:text-[40px]">
-            Gracias por tu interes
-          </h1>
-          <p className="mx-auto mt-4 max-w-[560px] text-[17px] leading-[1.55] text-[#5d6674] md:text-[19px]">
-            Actualmente este beneficio no esta disponible para tu grupo de edad.
-            Si en el futuro abrimos nuevas opciones, nos encantara ayudarte a revisarlas.
-          </p>
-        </div>
-      </section>
     );
   }
 
@@ -1727,6 +1256,8 @@ export default function Home() {
     return (
       <div key={`panel-${panelKey}`} className="w-full">
         <div className="mx-auto flex w-full max-w-[760px] flex-col items-center">
+          {currentStep !== "disqualified" ? (
+            <>
           <div className="flex w-full items-center justify-between gap-3 md:gap-4">
             <button
               type="button"
@@ -1739,7 +1270,7 @@ export default function Home() {
             {renderProgress()}
             <div className="flex w-[58px] shrink-0 justify-end md:w-[70px]">
               <span className="whitespace-nowrap text-[12px] font-black tracking-[-0.02em] text-[var(--brand-dark)] md:text-[13px]">
-                {progressLabel}
+                {currentQuestionIndex >= 0 ? `${currentQuestionIndex + 1} de 2` : "1 de 2"}
               </span>
             </div>
           </div>
@@ -1747,21 +1278,22 @@ export default function Home() {
           <div className={`mt-5 text-center md:mt-6 ${animationClass}`}>
             {currentStep === "age" ? (
               <p className="mx-auto mb-1 max-w-[520px] text-[14px] font-extrabold uppercase tracking-[0.04em] text-[var(--brand)] md:mb-1.5 md:text-[16px]">
-                Aplica para los beneficios IUL
+                Antes de llamar a un asesor
               </p>
             ) : null}
             <h2 className="mx-auto max-w-[720px] text-[30px] leading-[1.16] font-bold tracking-[-0.05em] text-[#101820] md:text-[46px]">
               {currentStep === "age" && "¿En qué grupo de edad estás?"}
-              {currentStep === "goal" &&
-                "Cuéntame, ¿qué te gustaría lograr con un seguro de vida?"}
               {currentStep === "state" && "Cual es tu ZIP code?"}
               {currentStep === "name" && "¿Cuál es tu nombre completo?"}
               {currentStep === "phone" &&
                 "¿A qué número te enviamos tu cotización personalizada?"}
               {currentStep === "email" &&
                 "¿Cuál es tu correo para enviarte la cotización?"}
+              {currentStep === "call-page" && "Llama a un asesor ahora"}
             </h2>
           </div>
+            </>
+          ) : null}
 
           {currentStep === "age" ? (
             <div className={`mt-8 grid w-full max-w-[420px] gap-4 md:mt-10 ${animationClass}`}>
@@ -1769,7 +1301,7 @@ export default function Home() {
                 <button
                   key={option}
                   type="button"
-                  onClick={() => handleDirectChoice("ageGroup", option, "goal")}
+                  onClick={() => handleAgeChoice(option)}
                   className={optionButtonClass(
                     answers.ageGroup === option,
                     option === recommendedAgeOption
@@ -1784,50 +1316,86 @@ export default function Home() {
             </div>
           ) : null}
 
-          {currentStep === "goal" ? (
-            <div className={`mt-8 grid w-full max-w-[460px] gap-4 md:mt-10 ${animationClass}`}>
-              {goalOptions.map((option) => (
-                <button
-                  key={option}
-                  type="button"
-                  onClick={() =>
-                    handleDirectChoice("insuranceGoal", option, shouldAskZipCode ? "state" : "name")
-                  }
-                  className={optionButtonClass(
-                    answers.insuranceGoal === option,
-                    option === recommendedGoalOption
-                  ) + " justify-center text-center"}
-                >
-                  {option === "Seguro de vida" ? (
-                    <span className="inline-flex items-center justify-center gap-2">
-                      <ShieldCheckIcon className="h-[22px] w-[22px] text-[#5d6674]" />
-                      <span>{option}</span>
-                    </span>
-                  ) : option === "Ahorrar e invertir" ? (
-                    <span className="inline-flex items-center justify-center gap-2">
-                      <StatisticGrowIcon className="h-[22px] w-[22px] text-[#5d6674]" />
-                      <span>{option}</span>
-                    </span>
-                  ) : option.normalize("NFC") === "Planificación de retiro" ? (
-                    <span className="inline-flex items-center justify-center gap-2">
-                      <RetirementPlanIcon className="h-[22px] w-[22px] text-[#5d6674]" />
-                      <span>{option}</span>
-                    </span>
-                  ) : option === "PlanificaciÃ³n de retiro" ? (
-                    <span className="inline-flex items-center justify-center gap-2">
-                      <RetirementPlanIcon className="h-[22px] w-[22px] text-[#5d6674]" />
-                      <span>{option}</span>
-                    </span>
-                  ) : option.normalize("NFC") === "No estoy seguro aún" ? (
-                    <span className="inline-flex items-center justify-center gap-2">
-                      <UnsureIcon className="h-[22px] w-[22px] text-[#5d6674]" />
-                      <span>{option}</span>
-                    </span>
-                  ) : (
-                    option
-                  )}
-                </button>
-              ))}
+          {currentStep === "disqualified" ? (
+            <div className={`mt-7 w-full max-w-[460px] md:mt-8 ${animationClass}`}>
+              <div className="overflow-hidden rounded-[22px] bg-white shadow-[0_18px_45px_rgba(16,24,32,0.12)] ring-1 ring-[#e6ebf2]">
+                <div className="bg-[#ff4b55] px-5 py-5 text-center text-white">
+                  <div className="text-[26px] leading-none">!</div>
+                  <p className="mt-2 text-[20px] font-black tracking-[-0.04em]">
+                    No calificas para este programa
+                  </p>
+                </div>
+
+                <div className="px-5 py-6 text-center">
+                  <div className="rounded-[12px] border border-[#ff9ba1] bg-[#fff2f3] px-4 py-3 text-left text-[14px] font-extrabold leading-[1.35] text-[#e21f2c]">
+                    Este programa es solo para personas de 22 a 50 años.
+                  </div>
+
+                  <h3 className="mt-6 text-[22px] font-black tracking-[-0.04em] text-[#101820]">
+                    Gracias por tu interés
+                  </h3>
+                  <p className="mx-auto mt-2 max-w-[360px] text-[15px] leading-[1.5] text-[#5d6674]">
+                    El programa de seguro de vida tipo IUL está diseñado para
+                    personas dentro del rango de edad permitido.
+                  </p>
+
+                  <div className="mt-6 border-t border-[#e6ebf2] pt-5 text-left">
+                    <p className="text-[12px] font-black uppercase tracking-[0.14em] text-[#9aa3b2]">
+                      ¿Por qué no califico?
+                    </p>
+
+                    <div className="mt-3 grid gap-3">
+                      <div className="flex items-center gap-3 rounded-[14px] border border-[#e2e8f0] bg-[#f8fafc] p-4">
+                        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[12px] bg-[#eaf2ff] text-[var(--brand)]">
+                          <CalendarSmallIcon className="h-6 w-6" />
+                        </span>
+                        <div>
+                          <p className="text-[15px] font-black tracking-[-0.03em] text-[#101820]">
+                            Rango de edad aceptado
+                          </p>
+                          <p className="mt-1 text-[13px] leading-[1.35] text-[#5d6674]">
+                            Solo aplica para personas de 22 a 50 años.
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-3 rounded-[14px] border border-[#e2e8f0] bg-[#f8fafc] p-4">
+                        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[12px] bg-[#edfdf5] text-[#15b873]">
+                          <ShieldCheckIcon className="h-6 w-6" />
+                        </span>
+                        <div>
+                          <p className="text-[15px] font-black tracking-[-0.03em] text-[#101820]">
+                            Seguro de vida - etapa activa
+                          </p>
+                          <p className="mt-1 text-[13px] leading-[1.35] text-[#5d6674]">
+                            Diseñado para personas dentro del rango permitido.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+            </div>
+          ) : null}
+
+          {currentStep === "call-page" ? (
+            <div className={`mt-8 flex w-full max-w-[460px] flex-col items-center text-center md:mt-10 ${animationClass}`}>
+              <div className="w-full rounded-[18px] border border-[#d8e6ff] bg-[#f7fbff] px-5 py-6 shadow-[0_10px_24px_rgba(26,115,232,0.08)]">
+                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[var(--brand)] text-white">
+                  <CallOutlineIcon className="h-6 w-6" />
+                </div>
+                <p className="mt-4 text-[15px] font-extrabold uppercase tracking-[0.04em] text-[var(--brand)]">
+                  Página de llamada
+                </p>
+                <p className="mt-2 text-[24px] font-black tracking-[-0.04em] text-[#101820]">
+                  Número por definir
+                </p>
+                <p className="mx-auto mt-3 max-w-[320px] text-[14px] leading-[1.45] text-[#5d6674]">
+                  Aquí mostraremos el número para llamar a un asesor.
+                </p>
+              </div>
             </div>
           ) : null}
 
@@ -1866,19 +1434,12 @@ export default function Home() {
 
               <button
                 type="button"
-                onClick={() => void handleZipCodeContinue()}
-                disabled={isLookingUpZip || normalizeZipCode(answers.zipCode).length !== 5}
+                onClick={handleZipCodeContinue}
+                disabled={normalizeZipCode(answers.zipCode).length !== 5}
                 className="inline-flex h-[54px] items-center justify-center gap-2 rounded-full bg-[var(--brand)] px-6 text-[18px] font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-45 hover:bg-[var(--brand-dark)]"
               >
-                <span>{isLookingUpZip ? "Validando ZIP code..." : "Confirmar ZIP code"}</span>
-                {isLookingUpZip ? (
-                  <span
-                    aria-hidden="true"
-                    className="h-[16px] w-[16px] rounded-full border-2 border-white/35 border-t-white animate-spin"
-                  />
-                ) : (
-                  <NextArrowIcon className="h-[18px] w-[18px]" />
-                )}
+                <span>Confirmar ZIP code</span>
+                <NextArrowIcon className="h-[18px] w-[18px]" />
               </button>
             </div>
           ) : null}
@@ -1920,7 +1481,7 @@ export default function Home() {
 
               <button
                 type="button"
-                onClick={() => void handleNameContinue()}
+                onClick={() => transitionTo("phone", "forward")}
                 disabled={!answers.firstName.trim() || !answers.lastName.trim()}
                 className="inline-flex h-[54px] items-center justify-center gap-2 rounded-full bg-[var(--brand)] px-6 text-[18px] font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-45 hover:bg-[var(--brand-dark)]"
               >
@@ -1931,15 +1492,7 @@ export default function Home() {
           ) : null}
 
           {currentStep === "phone" ? (
-            <form
-              className={`mt-8 flex w-full max-w-[460px] flex-col gap-4 md:mt-10 ${animationClass}`}
-              data-tf-element-role="offer"
-              onSubmit={(event) => {
-                event.preventDefault();
-                void submitLead();
-              }}
-            >
-              <input type="hidden" name={trustedFormFieldName} />
+            <div className={`mt-8 flex w-full max-w-[460px] flex-col gap-4 md:mt-10 ${animationClass}`}>
               <div className="flex gap-3">
                 <select
                   value={answers.phoneCountry}
@@ -1954,33 +1507,23 @@ export default function Home() {
                   <option value="US">US +1</option>
                 </select>
 
-                <div className="relative min-w-0 flex-1">
-                  <input
-                    id="phone-number"
-                    name="tel"
-                    value={formatPhoneDigits(answers.phoneNumber)}
-                    onChange={(event) => {
-                      setAnswers((prev) => ({
-                        ...prev,
-                        phoneNumber: event.target.value,
-                      }));
-                      setHasBlurredPhone(false);
-                      setPhoneError("");
-                    }}
-                    onBlur={() => setHasBlurredPhone(true)}
-                    placeholder="000 000 0000"
-                    inputMode="tel"
-                    autoComplete="tel"
-                    enterKeyHint="next"
-                    aria-invalid={phoneValidationStatus === "invalid" || !!phoneError}
-                    className={`h-[58px] w-full rounded-[16px] border bg-white px-5 pr-12 text-[17px] text-[#101820] outline-none transition ${phoneBorderClass}`}
-                  />
-                  {phoneValidationStatus !== "idle" ? (
-                    <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2">
-                      <PhoneStatusIcon status={phoneValidationStatus} />
-                    </span>
-                  ) : null}
-                </div>
+                <input
+                  id="phone-number"
+                  name="tel"
+                  value={formatPhoneDigits(answers.phoneNumber)}
+                  onChange={(event) => {
+                    setAnswers((prev) => ({
+                      ...prev,
+                      phoneNumber: event.target.value,
+                    }));
+                    setPhoneError("");
+                  }}
+                  placeholder="000 000 0000"
+                  inputMode="tel"
+                  autoComplete="tel"
+                  enterKeyHint="next"
+                  className="h-[58px] min-w-0 flex-1 rounded-[16px] border border-[#9c9c9c] bg-white px-5 text-[17px] text-[#101820] outline-none transition focus:border-[var(--brand)]"
+                />
               </div>
 
               <div className="relative">
@@ -2009,7 +1552,7 @@ export default function Home() {
               </div>
 
               <p className="min-h-[22px] text-[14px] text-[#d14c4c]">
-                {visiblePhoneError}
+                {phoneError}
               </p>
 
               <p className="min-h-[22px] text-[14px] text-[#d14c4c]">
@@ -2017,14 +1560,13 @@ export default function Home() {
               </p>
 
               <button
-                type="submit"
-                name="submit-lead"
-                data-tf-element-role="submit"
-                disabled={isSubmittingLead}
+                type="button"
+                onClick={finishVisualFlow}
+                disabled={isFinishingFlow}
                 className="inline-flex h-[54px] items-center justify-center gap-2 rounded-full bg-[var(--brand)] px-6 text-[18px] font-semibold text-white transition disabled:cursor-wait disabled:opacity-70 hover:bg-[var(--brand-dark)]"
               >
                 <span>Ver mi cotización ahora</span>
-                {isSubmittingLead ? (
+                {isFinishingFlow ? (
                   <span
                     aria-hidden="true"
                     className="h-[16px] w-[16px] rounded-full border-2 border-white/35 border-t-white animate-spin"
@@ -2034,30 +1576,10 @@ export default function Home() {
                 )}
               </button>
 
-              <p
-                className="-mt-1 text-center text-[11px] leading-[1.45] text-[#6b7280]"
-                data-tf-element-role="consent-language"
-              >
-                Al hacer clic en <strong>“Ver mi cotización ahora”</strong>, doy mi consentimiento expreso por escrito y mi firma electrónica para que <strong>Sunnel LLC</strong> (better-life), sus{" "}
-                <Link href="/socios" className="font-bold text-[#4b5563] underline underline-offset-2">
-                  socios de mercadeo y aseguradoras licenciadas
-                </Link>{" "}
-                y cualquier persona que llame o envíe mensajes en su nombre, me contacten al número de teléfono y correo electrónico proporcionados incluso si están en alguna lista “No Llamar” estatal, federal o interna con fines de mercadeo de seguros de vida, IUL, gastos finales y productos financieros relacionados. Acepto que dichas comunicaciones pueden hacerse mediante{" "}
-                <strong>sistemas de marcación automática, marcadores predictivos, mensajes de voz pregrabada o artificial (incluyendo IA), y SMS automatizados.</strong>{" "}
-                Pueden aplicar tarifas estándar de mensajes y datos. <strong>Entiendo que este consentimiento no es condición para comprar ningún producto</strong> y que puedo revocarlo en cualquier momento respondiendo <strong>STOP</strong> a un SMS o usando el enlace de cancelación en los correos. He leído y acepto la{" "}
-                <Link href="/privacy" className="font-bold text-[#4b5563] underline underline-offset-2">
-                  Política de Privacidad
-                </Link>{" "}
-                y los{" "}
-                <Link href="/terms" className="font-bold text-[#4b5563] underline underline-offset-2">
-                  Términos de Uso
-                </Link>.
-              </p>
-
               <p className="min-h-[22px] text-[14px] text-[#d14c4c]">
                 {submitError}
               </p>
-            </form>
+            </div>
           ) : null}
 
           {currentStep === "email" ? (
@@ -2088,11 +1610,11 @@ export default function Home() {
 
               <button
                 type="button"
-                onClick={() => void submitLead()}
-                disabled={isSubmittingLead}
+                onClick={finishVisualFlow}
+                disabled={isFinishingFlow}
                 className="inline-flex h-[54px] items-center justify-center gap-2 rounded-full bg-[var(--brand)] px-6 text-[18px] font-semibold text-white transition disabled:cursor-wait disabled:opacity-70 hover:bg-[var(--brand-dark)]"
               >
-                {isSubmittingLead ? (
+                {isFinishingFlow ? (
                   "Enviando..."
                 ) : (
                   <>
@@ -2108,6 +1630,8 @@ export default function Home() {
             </div>
           ) : null}
 
+          {currentStep !== "disqualified" ? (
+            <>
           <div className="mt-12 flex w-full max-w-[420px] items-center justify-center gap-4 md:mt-14">
             {questionnaireSecuritySeals.map((seal) => (
               <div
@@ -2124,41 +1648,56 @@ export default function Home() {
               </div>
             ))}
           </div>
-          {false ? (
-          <div className="hidden">
+          <div className="mt-9 flex w-full justify-center">
             <div className="inline-flex min-h-[46px] max-w-[360px] items-center justify-center gap-2 rounded-full bg-[var(--brand)] px-5 py-3 text-white shadow-[0_10px_20px_rgba(26,115,232,0.2)]">
+              <CallOutlineIcon className="h-[19px] w-[19px] shrink-0" />
               <span className="text-center text-[14px] font-extrabold leading-[1.15] tracking-[-0.02em] md:text-[15px]">
                 En el siguiente paso llamarás a un asesor
               </span>
             </div>
           </div>
+            </>
           ) : null}
         </div>
       </div>
     );
   }
 
+  if (!isDisqualificationCheckComplete) {
+    return null;
+  }
+
+  if (currentStep === "call-page") {
+    return (
+      <>
+        <CallFunnelPixels currentStep={currentStep} />
+        <BenchCallPage
+          ageGroup={answers.ageGroup}
+          insuranceGoal={answers.insuranceGoal}
+        />
+      </>
+    );
+  }
+
   return (
     <main className="min-h-screen bg-[var(--page-bg)] text-[var(--ink)]">
-      <noscript>
-        <img src="https://api.trustedform.com/ns.gif" alt="" />
-      </noscript>
+      <CallFunnelPixels currentStep={currentStep} />
       <style jsx global>{`
         @import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;800&display=swap");
       `}</style>
-      <header className="border-b border-transparent bg-white/96 shadow-[0_6px_18px_rgba(18,31,53,0.08)] backdrop-blur-sm">
+      <header className="border-b border-black/6 bg-white/96 shadow-[0_6px_18px_rgba(18,31,53,0.08)] backdrop-blur-sm">
         <div className="mx-auto flex h-[60px] w-full max-w-[1200px] items-center justify-between px-4 md:relative md:justify-center">
           <Image
             src="/media/better-life-logo.png"
             alt="Better Life"
-            width={190}
-            height={60}
+            width={180}
+            height={48}
             priority
-            className="h-[36px] w-[148px] object-contain md:h-[40px] md:w-[190px]"
+            className="h-auto w-[148px] md:w-[160px]"
           />
           <div className="flex items-center gap-2 text-[14px] font-semibold text-[#191919] md:absolute md:right-4">
             <Image
-              src="/media/secure-form-better-life.png"
+              src="/media/secure-call-badge.png"
               alt="Secure Form"
               width={150}
               height={32}
@@ -2168,9 +1707,7 @@ export default function Home() {
         </div>
       </header>
 
-      {isRejectedPage ? (
-        renderRejectedPage()
-      ) : isSuccessPage ? (
+      {isSuccessPage ? (
         <section className="px-0 py-0 md:px-4 md:py-6">{renderSuccessPage()}</section>
       ) : (
         <>
