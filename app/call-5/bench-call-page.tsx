@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Script from "next/script";
 import type { ReactElement, SVGProps } from "react";
+import { createEventId, getUtmParams, pushGtmEvent } from "@/lib/gtm-events";
 
 const phoneNumber = process.env.NEXT_PUBLIC_PAY_PER_CALL_PHONE_NUMBER || "+18882882203";
 const phoneDisplay = phoneNumber;
@@ -135,13 +136,33 @@ const faqs = [
 type BenchCallPageProps = {
   ageGroup?: string;
   insuranceGoal?: string;
+  leadId?: string;
+  leadEventId?: string;
 };
 
-export default function BenchCallPage({ ageGroup = "", insuranceGoal = "" }: BenchCallPageProps) {
+export default function BenchCallPage({
+  ageGroup = "",
+  insuranceGoal = "",
+  leadId = "",
+  leadEventId = "",
+}: BenchCallPageProps) {
   const ringbaTags = JSON.stringify({
     call5_age_group: ageGroup,
     call5_insurance_goal: insuranceGoal,
+    lead_id: leadId,
+    lead_event_id: leadEventId,
   });
+  const trackContactClick = () => {
+    pushGtmEvent("Contact", {
+      event_id: createEventId("contact"),
+      lead_event_id: leadEventId || undefined,
+      lead_id: leadId || undefined,
+      external_id: leadId || undefined,
+      phone_number: phoneNumber,
+      country: "US",
+      ...getUtmParams(),
+    });
+  };
 
   return (
     <main className="min-h-screen bg-white text-slate-800">
@@ -160,7 +181,7 @@ export default function BenchCallPage({ ageGroup = "", insuranceGoal = "" }: Ben
           <a href="#top" className="flex items-center gap-2" aria-label="Better Life">
             <Image src="/media/better-life-logo.png" alt="Better Life" width={180} height={48} className="h-7 w-auto" priority />
           </a>
-          <a href={telHref} className="inline-flex items-center gap-2 whitespace-nowrap text-sm font-bold sm:text-base" style={{ color: HERO_BG }}>
+          <a href={telHref} onClick={trackContactClick} className="inline-flex items-center gap-2 whitespace-nowrap text-sm font-bold sm:text-base" style={{ color: HERO_BG }}>
             <Phone className="h-4 w-4 shrink-0" />
             <span>{phoneDisplay}</span>
           </a>
@@ -182,11 +203,12 @@ export default function BenchCallPage({ ageGroup = "", insuranceGoal = "" }: Ben
           </p>
 
           <div className="mt-10">
-            <a href={telHref} className="block whitespace-nowrap text-[clamp(1.75rem,9vw,2.5rem)] font-bold tracking-tight md:text-3xl">
+            <a href={telHref} onClick={trackContactClick} className="block whitespace-nowrap text-[clamp(1.75rem,9vw,2.5rem)] font-bold tracking-tight md:text-3xl">
               {phoneDisplay}
             </a>
             <a
               href={telHref}
+              onClick={trackContactClick}
               className="mt-6 inline-flex items-center gap-3 rounded-md px-8 py-4 text-lg font-bold text-white shadow-lg transition-transform hover:-translate-y-0.5"
               style={{ backgroundColor: "#16a34a" }}
             >
@@ -223,7 +245,7 @@ export default function BenchCallPage({ ageGroup = "", insuranceGoal = "" }: Ben
             ))}
           </div>
           <div className="mt-12 text-center">
-            <a href={telHref} className="inline-flex items-center gap-3 rounded-md px-8 py-4 text-lg font-bold text-white shadow-lg" style={{ backgroundColor: ACCENT }}>
+            <a href={telHref} onClick={trackContactClick} className="inline-flex items-center gap-3 rounded-md px-8 py-4 text-lg font-bold text-white shadow-lg" style={{ backgroundColor: ACCENT }}>
               <Phone className="h-5 w-5" /> Habla con un Agente Licenciado
             </a>
           </div>
@@ -245,8 +267,8 @@ export default function BenchCallPage({ ageGroup = "", insuranceGoal = "" }: Ben
             ))}
           </div>
           <div className="mt-12 flex flex-col items-center gap-4">
-            <a href={telHref} className="whitespace-nowrap text-[clamp(1.5rem,7vw,2.25rem)] font-extrabold md:text-4xl" style={{ color: HERO_BG }}>{phoneDisplay}</a>
-            <a href={telHref} className="inline-flex items-center gap-3 rounded-md px-8 py-4 text-lg font-bold text-white shadow-lg" style={{ backgroundColor: ACCENT }}>
+            <a href={telHref} onClick={trackContactClick} className="whitespace-nowrap text-[clamp(1.5rem,7vw,2.25rem)] font-extrabold md:text-4xl" style={{ color: HERO_BG }}>{phoneDisplay}</a>
+            <a href={telHref} onClick={trackContactClick} className="inline-flex items-center gap-3 rounded-md px-8 py-4 text-lg font-bold text-white shadow-lg" style={{ backgroundColor: ACCENT }}>
               <Phone className="h-5 w-5" /> Habla con un Agente
             </a>
           </div>
@@ -281,8 +303,8 @@ export default function BenchCallPage({ ageGroup = "", insuranceGoal = "" }: Ben
             Cuanto antes empieces, mayor podría ser el valor en efectivo acumulado en tu póliza IUL. No dejes para mañana la protección de tu familia y tu retiro. Llama ahora y conoce tus opciones.
           </p>
           <div className="mt-10 flex flex-col items-center gap-4">
-            <a href={telHref} className="whitespace-nowrap text-[clamp(1.75rem,8vw,3rem)] font-extrabold md:text-5xl">{phoneDisplay}</a>
-            <a href={telHref} className="inline-flex items-center gap-3 rounded-md px-8 py-4 text-lg font-bold text-white shadow-lg" style={{ backgroundColor: ACCENT }}>
+            <a href={telHref} onClick={trackContactClick} className="whitespace-nowrap text-[clamp(1.75rem,8vw,3rem)] font-extrabold md:text-5xl">{phoneDisplay}</a>
+            <a href={telHref} onClick={trackContactClick} className="inline-flex items-center gap-3 rounded-md px-8 py-4 text-lg font-bold text-white shadow-lg" style={{ backgroundColor: ACCENT }}>
               <Phone className="h-5 w-5" /> Solicita tu Estimación
             </a>
           </div>
@@ -311,8 +333,8 @@ export default function BenchCallPage({ ageGroup = "", insuranceGoal = "" }: Ben
           <h2 className="text-4xl font-extrabold md:text-5xl">¿Listo para Saber Cuánto Podrías Recibir?</h2>
           <p className="mt-4 text-lg text-white/85">Llama ahora y un agente licenciado te dará tu estimación personalizada en minutos.</p>
           <div className="mt-10 flex flex-col items-center gap-4">
-            <a href={telHref} className="whitespace-nowrap text-[clamp(1.75rem,8vw,3rem)] font-extrabold md:text-5xl">{phoneDisplay}</a>
-            <a href={telHref} className="inline-flex items-center gap-3 rounded-md px-8 py-4 text-lg font-bold text-white shadow-lg" style={{ backgroundColor: "#16a34a" }}>
+            <a href={telHref} onClick={trackContactClick} className="whitespace-nowrap text-[clamp(1.75rem,8vw,3rem)] font-extrabold md:text-5xl">{phoneDisplay}</a>
+            <a href={telHref} onClick={trackContactClick} className="inline-flex items-center gap-3 rounded-md px-8 py-4 text-lg font-bold text-white shadow-lg" style={{ backgroundColor: "#16a34a" }}>
               <Phone className="h-5 w-5" /> Llamar Ahora
             </a>
             <p className="mt-4 max-w-xl text-sm text-white/70">

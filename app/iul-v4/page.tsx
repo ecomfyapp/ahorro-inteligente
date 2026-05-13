@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { createEventId, getUtmParams, pushGtmEvent } from "@/lib/gtm-events";
 import { inferUsZipFromStateAndPhone } from "@/lib/infer-us-zip";
 
 const questionnaireSecuritySeals = [
@@ -745,6 +746,7 @@ export default function Home() {
   const [leadToken, setLeadToken] = useState("");
   const transitionTimeoutRef = useRef<number | null>(null);
   const phoneValidationTimeoutRef = useRef<number | null>(null);
+  const trackedStepsRef = useRef<Set<string>>(new Set());
 
   const isSuccessPage = currentStep === "success";
   const isRejectedPage = currentStep === "rejected";
@@ -796,6 +798,23 @@ export default function Home() {
       ? ""
       : phoneError || (phoneValidationStatus === "invalid" ? livePhoneValidationMessage : "");
 
+  function getGtmLeadPayload() {
+    return {
+      funnel_id: "iul-v4",
+      step: currentStep,
+      country: "US",
+      state: answers.state || answers.detectedState || undefined,
+      zip_code: answers.zipCode || undefined,
+      age_group: answers.ageGroup || undefined,
+      insurance_goal: answers.insuranceGoal || undefined,
+      first_name: answers.firstName.trim() || undefined,
+      last_name: answers.lastName.trim() || undefined,
+      phone_number: normalizedPhone || undefined,
+      email: answers.email.trim() || undefined,
+      ...getUtmParams(),
+    };
+  }
+
   useEffect(() => {
     if (hasAgeRejectedCookie()) {
       setCurrentStep("rejected");
@@ -839,6 +858,32 @@ export default function Home() {
       }
     };
   }, [normalizedPhone, shouldShowPhoneValidation]);
+
+  useEffect(() => {
+    if (isRejectedPage || currentQuestionIndex < 0) return;
+
+    const trackingKey = `${currentQuestionIndex}:${currentStep}`;
+    if (trackedStepsRef.current.has(trackingKey)) return;
+
+    trackedStepsRef.current.add(trackingKey);
+    pushGtmEvent(currentQuestionIndex === 0 ? "PageView" : "ViewContent", {
+      ...getGtmLeadPayload(),
+      step_number: currentQuestionIndex + 1,
+    });
+  }, [
+    currentQuestionIndex,
+    currentStep,
+    isRejectedPage,
+    answers.state,
+    answers.detectedState,
+    answers.zipCode,
+    answers.ageGroup,
+    answers.insuranceGoal,
+    answers.firstName,
+    answers.lastName,
+    answers.email,
+    normalizedPhone,
+  ]);
 
   useEffect(() => {
     if (document.getElementById(trustedFormScriptId)) return;
@@ -1411,13 +1456,22 @@ export default function Home() {
 
       const responseBody = (await response.json().catch(() => null)) as { leadId?: string } | null;
       const leadId = responseBody?.leadId;
+      const leadEventId = createEventId("lead");
       const nextParams = new URLSearchParams(window.location.search);
       if (leadId) {
         nextParams.set("lead_id", leadId);
       }
+      nextParams.set("event_id", leadEventId);
       const shouldUsePayPerCallThankYou = isPayPerCallWindowOpen();
 
       const nextSearch = nextParams.toString() ? `?${nextParams.toString()}` : "";
+
+      pushGtmEvent("Lead", {
+        ...getGtmLeadPayload(),
+        event_id: leadEventId,
+        lead_id: leadId,
+        external_id: leadId,
+      });
 
       window.history.replaceState(
         null,
