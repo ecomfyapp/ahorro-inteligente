@@ -2040,7 +2040,7 @@ export default function Home() {
                 Al hacer clic en “Ver mi cotización ahora”, acepto recibir
                 llamadas, mensajes de texto y correos electrónicos de agentes
                 de seguros licenciados y socios de marketing sobre seguros de
-                vida y productos financieros al número proporcionado,
+                vida y productos financieros al número de teléfono y correo proporcionados,
                 incluyendo el uso de tecnología automatizada.
               </p>
 
