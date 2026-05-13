@@ -8,6 +8,7 @@ type LeadPayload = {
   answers?: Record<string, unknown>;
   meta?: {
     deviceId?: string;
+    trustedFormCertUrl?: string;
   };
 };
 
@@ -283,6 +284,7 @@ export async function POST(request: Request) {
     "unknown";
   const phoneValidation = validateUsPhone(body.answers.phoneNumber);
   const deviceId = String(body.meta?.deviceId || getRequestCookie(request, deviceCookieName)).trim();
+  const trustedFormCertUrl = normalizeString(body.meta?.trustedFormCertUrl);
   const now = Date.now();
   maybePruneAttemptStores(now);
   const duplicatePhoneCount = phoneValidation.normalized
@@ -328,6 +330,7 @@ export async function POST(request: Request) {
     funnelId,
     ipAddress: requestIp,
     geolocation: geo,
+    trustedFormCertUrl,
     ...restAnswers,
     state,
     zipCode,
@@ -354,6 +357,7 @@ export async function POST(request: Request) {
       phone_number: phoneValidation.normalized,
       email: normalizeString(restAnswers.email),
       lead_status: "pending_call",
+      trustedform_cert_url: trustedFormCertUrl || null,
       payload: lead,
     })
     .select("lead_id")

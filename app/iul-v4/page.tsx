@@ -132,6 +132,8 @@ const emptyAnswers: FunnelAnswers = {
 
 const deviceStorageKey = "best-money-device-id";
 const deviceCookieName = "bf_iul_device_id";
+const trustedFormScriptId = "trustedform-certify-sdk";
+const trustedFormFieldName = process.env.NEXT_PUBLIC_TRUSTEDFORM_FIELD || "xxTrustedFormCertUrl";
 const deviceCookieDurationDays = 15;
 const ageRejectedCookieName = "bf_age_rejected";
 const ageRejectedCookieDurationDays = 90;
@@ -238,6 +240,13 @@ function getOrCreateDeviceId() {
   window.localStorage.setItem(deviceStorageKey, newId);
   setDeviceCookie(newId);
   return newId;
+}
+
+function getTrustedFormCertUrl() {
+  if (typeof document === "undefined") return "";
+
+  const field = document.getElementsByName(trustedFormFieldName)[0] as HTMLInputElement | undefined;
+  return field?.value?.trim() || "";
 }
 
 function setDeviceCookie(deviceId: string) {
@@ -788,6 +797,21 @@ export default function Home() {
   }, [normalizedPhone, shouldShowPhoneValidation]);
 
   useEffect(() => {
+    if (document.getElementById(trustedFormScriptId)) return;
+
+    const trustedFormScript = document.createElement("script");
+    trustedFormScript.id = trustedFormScriptId;
+    trustedFormScript.type = "text/javascript";
+    trustedFormScript.async = true;
+    trustedFormScript.src = `${window.location.protocol}//api.trustedform.com/trustedform.js?field=${encodeURIComponent(
+      trustedFormFieldName,
+    )}&use_tagged_consent=true&l=${Date.now()}${Math.random()}`;
+
+    const firstScript = document.getElementsByTagName("script")[0];
+    firstScript?.parentNode?.insertBefore(trustedFormScript, firstScript);
+  }, []);
+
+  useEffect(() => {
     if (isRejectedPage) return;
 
     let isCancelled = false;
@@ -1331,6 +1355,7 @@ export default function Home() {
           answers: cleanedAnswers,
           meta: {
             deviceId: getOrCreateDeviceId(),
+            trustedFormCertUrl: getTrustedFormCertUrl(),
           },
         }),
       });
@@ -1905,7 +1930,15 @@ export default function Home() {
           ) : null}
 
           {currentStep === "phone" ? (
-            <div className={`mt-8 flex w-full max-w-[460px] flex-col gap-4 md:mt-10 ${animationClass}`}>
+            <form
+              className={`mt-8 flex w-full max-w-[460px] flex-col gap-4 md:mt-10 ${animationClass}`}
+              data-tf-element-role="offer"
+              onSubmit={(event) => {
+                event.preventDefault();
+                void submitLead();
+              }}
+            >
+              <input type="hidden" name={trustedFormFieldName} />
               <div className="flex gap-3">
                 <select
                   value={answers.phoneCountry}
@@ -1983,8 +2016,9 @@ export default function Home() {
               </p>
 
               <button
-                type="button"
-                onClick={() => void submitLead()}
+                type="submit"
+                name="submit-lead"
+                data-tf-element-role="submit"
                 disabled={isSubmittingLead}
                 className="inline-flex h-[54px] items-center justify-center gap-2 rounded-full bg-[var(--brand)] px-6 text-[18px] font-semibold text-white transition disabled:cursor-wait disabled:opacity-70 hover:bg-[var(--brand-dark)]"
               >
@@ -1999,10 +2033,21 @@ export default function Home() {
                 )}
               </button>
 
+              <p
+                className="-mt-1 text-center text-[11px] leading-[1.45] text-[#6b7280]"
+                data-tf-element-role="consent-language"
+              >
+                Al hacer clic en “Ver mi cotización ahora”, acepto recibir
+                llamadas, mensajes de texto y correos electrónicos de agentes
+                de seguros licenciados y socios de marketing sobre seguros de
+                vida y productos financieros al número proporcionado,
+                incluyendo el uso de tecnología automatizada.
+              </p>
+
               <p className="min-h-[22px] text-[14px] text-[#d14c4c]">
                 {submitError}
               </p>
-            </div>
+            </form>
           ) : null}
 
           {currentStep === "email" ? (
@@ -2085,6 +2130,9 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-[var(--page-bg)] text-[var(--ink)]">
+      <noscript>
+        <img src="https://api.trustedform.com/ns.gif" alt="" />
+      </noscript>
       <style jsx global>{`
         @import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;800&display=swap");
       `}</style>
