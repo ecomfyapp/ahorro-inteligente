@@ -868,6 +868,7 @@ export default function Home() {
     trackedStepsRef.current.add(trackingKey);
     pushGtmEvent(currentQuestionIndex === 0 ? "PageView" : "ViewContent", {
       ...getGtmLeadPayload(),
+      event_id: createEventId(currentQuestionIndex === 0 ? "pageview" : "viewcontent"),
       step_number: currentQuestionIndex + 1,
     });
   }, [
