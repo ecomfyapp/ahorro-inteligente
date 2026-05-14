@@ -480,7 +480,7 @@ export async function POST(request: Request) {
       last_name: normalizeString(restAnswers.lastName),
       phone_number: phoneValidation.normalized,
       email: normalizeString(restAnswers.email),
-      lead_status: "pending_call",
+      lead_status: "ready_for_sell",
       trustedform_cert_url: trustedFormCertUrl || null,
       payload: lead,
     })
