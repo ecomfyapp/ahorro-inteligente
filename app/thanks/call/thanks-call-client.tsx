@@ -8,6 +8,7 @@ export default function ThanksCallClient() {
 
   return (
     <BenchCallPage
+      funnelId={searchParams.get("funnel_id") || ""}
       ageGroup={searchParams.get("age_group") || ""}
       insuranceGoal={searchParams.get("insurance_goal") || ""}
       leadId={searchParams.get("lead_id") || ""}

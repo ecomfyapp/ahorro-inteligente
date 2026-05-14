@@ -134,17 +134,20 @@ const faqs = [
 ];
 
 type BenchCallPageProps = {
+  funnelId?: string;
   ageGroup?: string;
   insuranceGoal?: string;
   leadId?: string;
 };
 
 export default function BenchCallPage({
+  funnelId = "",
   ageGroup = "",
   insuranceGoal = "",
   leadId = "",
 }: BenchCallPageProps) {
   const ringbaTags = JSON.stringify({
+    funnel_id: funnelId,
     call5_age_group: ageGroup,
     call5_insurance_goal: insuranceGoal,
     lead_id: leadId,
@@ -154,6 +157,7 @@ export default function BenchCallPage({
       event_id: createEventId("contact"),
       lead_id: leadId || undefined,
       external_id: leadId || undefined,
+      funnel_id: funnelId || undefined,
       ringba_phone_number: phoneNumber,
       country: "US",
       ...getUtmParams(),

@@ -1464,6 +1464,7 @@ export default function Home() {
       const leadId = responseBody?.leadId;
       const leadEventId = createEventId("lead");
       const nextParams = new URLSearchParams(window.location.search);
+      nextParams.set("funnel_id", "iul-v4");
       if (leadId) {
         nextParams.set("lead_id", leadId);
       }
