@@ -1503,6 +1503,7 @@ export default function Home() {
         }).filter(([, value]) => value !== "" && value != null)
       );
       const preparedLeadToken = await prepareLeadToken();
+      const shouldUsePayPerCallThankYou = isPayPerCallWindowOpen();
 
       const response = await fetch("/api/lead", {
         method: "POST",
@@ -1516,6 +1517,7 @@ export default function Home() {
           meta: {
             deviceId: getOrCreateDeviceId(),
             trustedFormCertUrl: getTrustedFormCertUrl(),
+            salePath: shouldUsePayPerCallThankYou ? "call" : "lead",
           },
         }),
       });
@@ -1535,7 +1537,6 @@ export default function Home() {
       if (leadId) {
         nextParams.set("lead_id", leadId);
       }
-      const shouldUsePayPerCallThankYou = isPayPerCallWindowOpen();
 
       const nextSearch = nextParams.toString() ? `?${nextParams.toString()}` : "";
 

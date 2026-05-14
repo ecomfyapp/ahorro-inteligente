@@ -9,6 +9,7 @@ type LeadPayload = {
   meta?: {
     deviceId?: string;
     trustedFormCertUrl?: string;
+    salePath?: "lead" | "call";
   };
 };
 
@@ -447,6 +448,8 @@ export async function POST(request: Request) {
   const funnelId = getFunnelId(body.page);
   const state = normalizeState(restAnswers.state);
   const zipCode = normalizeZipCode(restAnswers.zipCode);
+  const salePath = body.meta?.salePath === "call" ? "call" : "lead";
+  const leadStatus = salePath === "call" ? "pending_call" : "ready_for_sell";
   const lead = {
     submittedAt,
     source: "better-life-next",
@@ -455,6 +458,7 @@ export async function POST(request: Request) {
     ipAddress: requestIp,
     geolocation: geo,
     trustedFormCertUrl,
+    salePath,
     ...restAnswers,
     state,
     zipCode,
@@ -481,7 +485,7 @@ export async function POST(request: Request) {
       last_name: normalizeString(restAnswers.lastName),
       phone_number: phoneValidation.normalized,
       email: normalizeString(restAnswers.email),
-      lead_status: "ready_for_sell",
+      lead_status: leadStatus,
       trustedform_cert_url: trustedFormCertUrl || null,
     })
     .select("lead_id")

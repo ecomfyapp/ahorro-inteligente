@@ -35,3 +35,19 @@ create table public.lead_metadata (
   trustedform_claim_response jsonb,
   trustedform_claim_error text
 );
+
+create table public.ringba_call_events (
+  id uuid primary key default gen_random_uuid(),
+  created_at timestamptz not null default now(),
+  lead_id uuid references public.leads(lead_id) on delete set null,
+  funnel_id text,
+  ringba_call_id text,
+  event_name text,
+  conversion_status text,
+  call_duration_seconds integer,
+  caller_phone_number text,
+  dialed_phone_number text,
+  payout numeric,
+  revenue numeric,
+  raw_payload jsonb not null
+);
