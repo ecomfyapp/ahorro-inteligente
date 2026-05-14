@@ -799,12 +799,17 @@ export default function Home() {
       : phoneError || (phoneValidationStatus === "invalid" ? livePhoneValidationMessage : "");
 
   function getGtmLeadPayload() {
+    const location = answers.locationText || defaultLocationText || "";
+    const city = location.split(",")[0]?.trim() || "";
+
     return {
       funnel_id: "iul-v4",
       step: currentStep,
       country: "US",
       state: answers.state || answers.detectedState || undefined,
       zip_code: answers.zipCode || undefined,
+      city: city || undefined,
+      location: location || undefined,
       age_group: answers.ageGroup || undefined,
       insurance_goal: answers.insuranceGoal || undefined,
       first_name: answers.firstName.trim() || undefined,
