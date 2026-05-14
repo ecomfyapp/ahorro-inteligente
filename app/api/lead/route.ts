@@ -261,14 +261,14 @@ async function claimTrustedFormCertificate({
 
 async function claimTrustedFormAndUpdateLead({
   supabase,
-  tableName,
+  metadataTableName,
   leadId,
   certUrl,
   email,
   phone,
 }: {
   supabase: ReturnType<typeof createSupabaseAdminClient>;
-  tableName: string;
+  metadataTableName: string;
   leadId: string;
   certUrl: string;
   email: string;
@@ -285,7 +285,7 @@ async function claimTrustedFormAndUpdateLead({
     });
 
     const { error } = await supabase
-      .from(tableName)
+      .from(metadataTableName)
       .update({
         trustedform_claim_status: claimResult.status,
         trustedform_claimed_at: claimResult.status === "claimed" ? new Date().toISOString() : null,
@@ -301,7 +301,7 @@ async function claimTrustedFormAndUpdateLead({
     console.error("TrustedForm claim failed", error);
 
     await supabase
-      .from(tableName)
+      .from(metadataTableName)
       .update({
         trustedform_claim_status: "failed",
         trustedform_claim_error: error instanceof Error ? error.message : "TrustedForm claim failed",
@@ -468,6 +468,7 @@ export async function POST(request: Request) {
     },
   };
   const tableName = process.env.SUPABASE_LEADS_TABLE?.trim() || "leads";
+  const metadataTableName = process.env.SUPABASE_LEAD_METADATA_TABLE?.trim() || "lead_metadata";
   const { data, error } = await supabase
     .from(tableName)
     .insert({
@@ -482,7 +483,6 @@ export async function POST(request: Request) {
       email: normalizeString(restAnswers.email),
       lead_status: "ready_for_sell",
       trustedform_cert_url: trustedFormCertUrl || null,
-      payload: lead,
     })
     .select("lead_id")
     .single();
@@ -491,6 +491,29 @@ export async function POST(request: Request) {
     console.error("Supabase lead insert failed", error);
     return NextResponse.json(
       { error: "No pudimos guardar el lead en Supabase" },
+      { status: 502 }
+    );
+  }
+
+  const { error: metadataError } = await supabase
+    .from(metadataTableName)
+    .insert({
+      lead_id: data.lead_id,
+      source: lead.source,
+      page: lead.pagina,
+      submitted_at: submittedAt,
+      ip_address: requestIp,
+      geolocation: geo,
+      device_id: deviceId || null,
+      validation: lead.validation,
+      risk_flags: riskFlags,
+      payload: lead,
+    });
+
+  if (metadataError) {
+    console.error("Supabase lead metadata insert failed", metadataError);
+    return NextResponse.json(
+      { error: "No pudimos guardar la metadata del lead en Supabase" },
       { status: 502 }
     );
   }
@@ -505,7 +528,7 @@ export async function POST(request: Request) {
     waitUntil(
       claimTrustedFormAndUpdateLead({
         supabase,
-        tableName,
+        metadataTableName,
         leadId: data.lead_id,
         certUrl: trustedFormCertUrl,
         email: normalizeString(restAnswers.email),

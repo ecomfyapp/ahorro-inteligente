@@ -14,6 +14,11 @@ const ringbaScriptUrl = /^CA[a-zA-Z0-9]+$/.test(ringbaCampaignId)
 const HERO_BG = "#0a3d91";
 const ACCENT = "#f97316";
 
+function lowerGtmValue(value?: string | null) {
+  const normalized = String(value || "").trim().toLowerCase();
+  return normalized || undefined;
+}
+
 type IconComponent = (props: SVGProps<SVGSVGElement>) => ReactElement;
 
 function IconBase(props: SVGProps<SVGSVGElement>) {
@@ -157,9 +162,9 @@ export default function BenchCallPage({
       event_id: createEventId("contact"),
       lead_id: leadId || undefined,
       external_id: leadId || undefined,
-      funnel_id: funnelId || undefined,
+      funnel_id: lowerGtmValue(funnelId),
       ringba_phone_number: phoneNumber,
-      country: "US",
+      country: "us",
       ...getUtmParams(),
     });
   };

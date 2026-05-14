@@ -72,6 +72,59 @@ const stateOptions = [
   "South Carolina", "South Dakota", "Tennessee", "Texas", "Utah", "Vermont",
   "Virginia", "Washington", "West Virginia", "Wisconsin", "Wyoming", "District of Columbia",
 ];
+const stateAbbreviations: Record<string, string> = {
+  Alabama: "al",
+  Alaska: "ak",
+  Arizona: "az",
+  Arkansas: "ar",
+  California: "ca",
+  Colorado: "co",
+  Connecticut: "ct",
+  Delaware: "de",
+  Florida: "fl",
+  Georgia: "ga",
+  Hawaii: "hi",
+  Idaho: "id",
+  Illinois: "il",
+  Indiana: "in",
+  Iowa: "ia",
+  Kansas: "ks",
+  Kentucky: "ky",
+  Louisiana: "la",
+  Maine: "me",
+  Maryland: "md",
+  Massachusetts: "ma",
+  Michigan: "mi",
+  Minnesota: "mn",
+  Mississippi: "ms",
+  Missouri: "mo",
+  Montana: "mt",
+  Nebraska: "ne",
+  Nevada: "nv",
+  "New Hampshire": "nh",
+  "New Jersey": "nj",
+  "New Mexico": "nm",
+  "New York": "ny",
+  "North Carolina": "nc",
+  "North Dakota": "nd",
+  Ohio: "oh",
+  Oklahoma: "ok",
+  Oregon: "or",
+  Pennsylvania: "pa",
+  "Rhode Island": "ri",
+  "South Carolina": "sc",
+  "South Dakota": "sd",
+  Tennessee: "tn",
+  Texas: "tx",
+  Utah: "ut",
+  Vermont: "vt",
+  Virginia: "va",
+  Washington: "wa",
+  "West Virginia": "wv",
+  Wisconsin: "wi",
+  Wyoming: "wy",
+  "District of Columbia": "dc",
+};
 
 type FunnelStep =
   | "intro"
@@ -136,7 +189,7 @@ const deviceStorageKey = "better-life-device-id";
 const deviceCookieName = "bf_iul_device_id";
 const trustedFormScriptId = "trustedform-certify-sdk";
 const trustedFormFieldName = process.env.NEXT_PUBLIC_TRUSTEDFORM_FIELD || "xxTrustedFormCertUrl";
-const payPerCallStatus = process.env.NEXT_PUBLIC_PAY_PER_CALL_STATUS;
+const payPerCallStatus = process.env.NEXT_PUBLIC_PAY_PER_CALL_STATUS || "OFF";
 const payPerCallStartTime = process.env.NEXT_PUBLIC_PAY_PER_CALL_START_TIME || "10:00";
 const payPerCallEndTime = process.env.NEXT_PUBLIC_PAY_PER_CALL_END_TIME || "18:00";
 const deviceCookieDurationDays = 15;
@@ -252,46 +305,6 @@ function getTrustedFormCertUrl() {
 
   const field = document.getElementsByName(trustedFormFieldName)[0] as HTMLInputElement | undefined;
   return field?.value?.trim() || "";
-}
-
-function parseTimeToMinutes(value: string) {
-  if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(value)) return null;
-
-  const [hours, minutes] = value.split(":").map(Number);
-  return hours * 60 + minutes;
-}
-
-function getNewYorkMinutes() {
-  const parts = new Intl.DateTimeFormat("en-US", {
-    timeZone: "America/New_York",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  }).formatToParts(new Date());
-  const hour = Number(parts.find((part) => part.type === "hour")?.value);
-  const minute = Number(parts.find((part) => part.type === "minute")?.value);
-
-  if (!Number.isFinite(hour) || !Number.isFinite(minute)) return null;
-
-  return hour * 60 + minute;
-}
-
-function isWithinTimeWindow(current: number, start: number, end: number) {
-  if (start === end) return true;
-  if (start < end) return current >= start && current < end;
-  return current >= start || current < end;
-}
-
-function isPayPerCallWindowOpen() {
-  if (payPerCallStatus !== "ON") return false;
-
-  const start = parseTimeToMinutes(payPerCallStartTime);
-  const end = parseTimeToMinutes(payPerCallEndTime);
-  const current = getNewYorkMinutes();
-
-  if (start == null || end == null || current == null) return false;
-
-  return isWithinTimeWindow(current, start, end);
 }
 
 function setDeviceCookie(deviceId: string) {
@@ -725,6 +738,57 @@ function PhoneStatusIcon({ status }: { status: PhoneValidationStatus }) {
   return null;
 }
 
+function parseTimeToMinutes(value: string) {
+  if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(value)) return null;
+
+  const [hours, minutes] = value.split(":").map(Number);
+  return hours * 60 + minutes;
+}
+
+function getNewYorkMinutes() {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/New_York",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).formatToParts(new Date());
+  const hour = Number(parts.find((part) => part.type === "hour")?.value);
+  const minute = Number(parts.find((part) => part.type === "minute")?.value);
+
+  if (!Number.isFinite(hour) || !Number.isFinite(minute)) return null;
+
+  return hour * 60 + minute;
+}
+
+function isWithinTimeWindow(current: number, start: number, end: number) {
+  if (start === end) return true;
+  if (start < end) return current >= start && current < end;
+  return current >= start || current < end;
+}
+
+function isPayPerCallWindowOpen() {
+  if (payPerCallStatus !== "ON") return false;
+
+  const start = parseTimeToMinutes(payPerCallStartTime);
+  const end = parseTimeToMinutes(payPerCallEndTime);
+  const current = getNewYorkMinutes();
+
+  if (start == null || end == null || current == null) return false;
+
+  return isWithinTimeWindow(current, start, end);
+}
+
+function lowerGtmValue(value?: string | null) {
+  const normalized = String(value || "").trim().toLowerCase();
+  return normalized || undefined;
+}
+
+function getGtmState(value?: string | null) {
+  const state = String(value || "").trim();
+  if (/^[A-Za-z]{2}$/.test(state)) return state.toLowerCase();
+  return stateAbbreviations[state] || lowerGtmValue(state);
+}
+
 export default function Home() {
   const [currentStep, setCurrentStep] = useState<FunnelStep>(() =>
     hasAgeRejectedCookie() ? "rejected" : "age",
@@ -801,21 +865,22 @@ export default function Home() {
   function getGtmLeadPayload() {
     const location = answers.locationText || defaultLocationText || "";
     const city = location.split(",")[0]?.trim() || "";
+    const state = answers.state || answers.detectedState;
 
     return {
       funnel_id: "iul-v4",
       step: currentStep,
-      country: "US",
-      state: answers.state || answers.detectedState || undefined,
+      country: "us",
+      state: getGtmState(state),
       zip_code: answers.zipCode || undefined,
-      city: city || undefined,
-      location: location || undefined,
-      age_group: answers.ageGroup || undefined,
-      insurance_goal: answers.insuranceGoal || undefined,
-      first_name: answers.firstName.trim() || undefined,
-      last_name: answers.lastName.trim() || undefined,
+      city: lowerGtmValue(city),
+      location: lowerGtmValue(location),
+      age_group: lowerGtmValue(answers.ageGroup),
+      insurance_goal: lowerGtmValue(answers.insuranceGoal),
+      first_name: lowerGtmValue(answers.firstName),
+      last_name: lowerGtmValue(answers.lastName),
       phone_number: normalizedPhone || undefined,
-      email: answers.email.trim() || undefined,
+      email: lowerGtmValue(answers.email),
       ...getUtmParams(),
     };
   }
@@ -1460,7 +1525,9 @@ export default function Home() {
         throw new Error(errorBody?.error || "No pudimos enviar tu solicitud ahora mismo.");
       }
 
-      const responseBody = (await response.json().catch(() => null)) as { leadId?: string } | null;
+      const responseBody = (await response.json().catch(() => null)) as {
+        leadId?: string;
+      } | null;
       const leadId = responseBody?.leadId;
       const leadEventId = createEventId("lead");
       const nextParams = new URLSearchParams(window.location.search);
