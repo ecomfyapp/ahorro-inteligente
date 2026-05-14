@@ -4,15 +4,12 @@ import "./globals.css";
 
 const gtmId = process.env.NEXT_PUBLIC_GTM_ID;
 
-const defaultUrl = process.env.VERCEL_URL
-  ? `https://${process.env.VERCEL_URL}`
-  : "http://localhost:3000";
 const siteUrl = "https://www.better-life.us";
 const siteTitle = "Better Life";
 const siteDescription = "Consulta opciones de seguros de vida IUL con asesores licenciados.";
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.VERCEL_URL ? defaultUrl : siteUrl),
+  metadataBase: new URL(siteUrl),
   title: siteTitle,
   description: siteDescription,
   alternates: {
