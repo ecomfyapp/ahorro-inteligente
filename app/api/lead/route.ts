@@ -193,6 +193,16 @@ function getFunnelId(page?: string) {
   return normalizedPage || "home";
 }
 
+function getLeadLanguage() {
+  const value = process.env.NEXT_PUBLIC_LEAD_LANGUAGE?.trim().toLowerCase();
+  return value === "en" || value === "es" ? value : null;
+}
+
+function getLeadSource() {
+  const value = process.env.NEXT_PUBLIC_LEAD_SOURCE?.trim().toLowerCase();
+  return value === "network" || value === "internal" ? value : null;
+}
+
 function isTrustedFormCertUrl(value: string) {
   try {
     const url = new URL(value);
@@ -450,11 +460,15 @@ export async function POST(request: Request) {
   const zipCode = normalizeZipCode(restAnswers.zipCode);
   const salePath = body.meta?.salePath === "call" ? "call" : "lead";
   const leadStatus = salePath === "call" ? "pending_call" : "ready_for_sell";
+  const leadLanguage = getLeadLanguage();
+  const leadSource = getLeadSource();
   const lead = {
     submittedAt,
     source: "better-life-next",
     pagina: body.page || "home",
     funnelId,
+    language: leadLanguage,
+    leadSource,
     ipAddress: requestIp,
     geolocation: geo,
     trustedFormCertUrl,
@@ -488,6 +502,8 @@ export async function POST(request: Request) {
       email: normalizeString(restAnswers.email),
       lead_status: leadStatus,
       trustedform_cert_url: trustedFormCertUrl || null,
+      language: leadLanguage,
+      source: leadSource,
     })
     .select("lead_id")
     .single();
