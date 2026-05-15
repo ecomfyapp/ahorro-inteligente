@@ -459,6 +459,7 @@ export async function POST(request: Request) {
     geolocation: geo,
     trustedFormCertUrl,
     salePath,
+    leadStatus,
     ...restAnswers,
     state,
     zipCode,
