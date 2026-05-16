@@ -203,6 +203,11 @@ function getLeadSource() {
   return value === "network" || value === "internal" ? value : null;
 }
 
+function getLeadDomain() {
+  const value = process.env.NEXT_PUBLIC_LEAD_DOMAIN?.trim().toLowerCase();
+  return value || null;
+}
+
 function isTrustedFormCertUrl(value: string) {
   try {
     const url = new URL(value);
@@ -462,6 +467,7 @@ export async function POST(request: Request) {
   const leadStatus = salePath === "call" ? "pending_call" : "ready_for_sell";
   const leadLanguage = getLeadLanguage();
   const leadSource = getLeadSource();
+  const leadDomain = getLeadDomain();
   const lead = {
     submittedAt,
     source: "better-life-next",
@@ -469,6 +475,7 @@ export async function POST(request: Request) {
     funnelId,
     language: leadLanguage,
     leadSource,
+    domain: leadDomain,
     ipAddress: requestIp,
     geolocation: geo,
     trustedFormCertUrl,
@@ -504,6 +511,7 @@ export async function POST(request: Request) {
       trustedform_cert_url: trustedFormCertUrl || null,
       language: leadLanguage,
       source: leadSource,
+      domain: leadDomain,
     })
     .select("lead_id")
     .single();

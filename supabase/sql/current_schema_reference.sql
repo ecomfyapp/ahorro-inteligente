@@ -15,7 +15,10 @@ create table public.leads (
   email text check (email is null or email ~* '^[^@\s]+@[^@\s]+\.[^@\s]+$'),
   lead_status text not null default 'ready_for_sell',
   trustedform_cert_url text,
-  sold_as text check (sold_as is null or sold_as in ('lead', 'call'))
+  sold_as text check (sold_as is null or sold_as in ('lead', 'call')),
+  language text check (language is null or language in ('en', 'es')),
+  source text check (source is null or source in ('network', 'internal')),
+  domain text
 );
 
 create table public.lead_metadata (
