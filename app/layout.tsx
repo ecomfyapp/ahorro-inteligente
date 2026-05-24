@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { GoogleTagManager } from "@next/third-parties/google";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 
 const gtmId = process.env.NEXT_PUBLIC_GTM_ID;
@@ -65,6 +66,7 @@ export default function RootLayout({
         </noscript>
         ) : null}
         {children}
+        <Analytics />
       </body>
     </html>
   );

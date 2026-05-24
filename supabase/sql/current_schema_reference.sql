@@ -1,4 +1,4 @@
--- Reference only: expected current public schema after running migrations 001-013.
+-- Reference only: expected current public schema.
 -- Do not run this whole file if your database already has data.
 
 create table public.leads (
