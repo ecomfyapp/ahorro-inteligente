@@ -9,6 +9,8 @@ import {
   User,
   Zap,
 } from "lucide-react";
+import { Suspense } from "react";
+import VercelThankYouTracker from "../vercel-thank-you-tracker";
 
 const thankYouHighlights = [
   {
@@ -69,6 +71,9 @@ const faqs = [
 export default function LeadThanksPage() {
   return (
     <main className="min-h-screen bg-[#f6f8fb] px-0 py-0 text-[#13213c] md:px-4 md:py-6">
+      <Suspense fallback={null}>
+        <VercelThankYouTracker thankYouType="lead" />
+      </Suspense>
       <div className="mx-auto w-full max-w-[490px] overflow-hidden bg-white">
         <section className="border-t border-[#f2d7d7] px-4 pb-6 pt-5 text-center md:px-6">
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#18bf79] text-white shadow-[0_10px_24px_rgba(24,191,121,0.25)]">

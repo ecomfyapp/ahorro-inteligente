@@ -1,6 +1,7 @@
 import { geolocation, ipAddress, waitUntil } from "@vercel/functions";
 import { NextResponse } from "next/server";
 import { leadTokenCookieName } from "@/app/api/lead-token/route";
+import { buildApplicationNumber } from "@/lib/application-number";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 type LeadPayload = {
@@ -385,15 +386,6 @@ function validateUsPhone(value: unknown): PhoneValidationResult {
     flags.push("synthetic_tail");
   }
 
-  if (flags.length > 0) {
-    return {
-      isValid: false,
-      normalized,
-      flags,
-      reason: "Ingresa un numero real de EE.UU. Evita secuencias o numeros de ejemplo.",
-    };
-  }
-
   return { isValid: true, normalized, flags };
 }
 
@@ -446,19 +438,10 @@ export async function POST(request: Request) {
     ...(deviceVelocityCount >= 4 ? ["high_velocity_device"] : []),
   ];
 
-  if (!phoneValidation.isValid) {
-    return NextResponse.json(
-      {
-        error: phoneValidation.reason || "Ingresa un numero valido de EE.UU.",
-        riskFlags,
-      },
-      { status: 422 }
-    );
-  }
-
   const restAnswers = Object.fromEntries(
     Object.entries(cleanedAnswers).filter(([key]) => key !== "phoneNumber")
   );
+  const phoneNumber = phoneValidation.normalized || normalizeString(body.answers.phoneNumber);
   const submittedAt = new Date().toISOString();
   const funnelId = getFunnelId(body.page);
   const state = normalizeState(restAnswers.state);
@@ -484,7 +467,7 @@ export async function POST(request: Request) {
     ...restAnswers,
     state,
     zipCode,
-    phoneNumber: phoneValidation.normalized,
+    phoneNumber,
     validation: {
       phoneCountry: "US",
       duplicatePhoneCount,
@@ -505,7 +488,7 @@ export async function POST(request: Request) {
       zip_code: zipCode,
       first_name: normalizeString(restAnswers.firstName),
       last_name: normalizeString(restAnswers.lastName),
-      phone_number: phoneValidation.normalized,
+      phone_number: phoneNumber,
       email: normalizeString(restAnswers.email),
       lead_status: leadStatus,
       trustedform_cert_url: trustedFormCertUrl || null,
@@ -528,6 +511,7 @@ export async function POST(request: Request) {
     .from(metadataTableName)
     .insert({
       lead_id: data.lead_id,
+      application_id: buildApplicationNumber(data.lead_id),
       source: lead.source,
       page: lead.pagina,
       submitted_at: submittedAt,
@@ -561,7 +545,7 @@ export async function POST(request: Request) {
         leadId: data.lead_id,
         certUrl: trustedFormCertUrl,
         email: normalizeString(restAnswers.email),
-        phone: phoneValidation.normalized,
+        phone: phoneNumber,
       }),
     );
   }

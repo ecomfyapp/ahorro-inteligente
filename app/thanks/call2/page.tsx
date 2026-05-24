@@ -1,12 +1,12 @@
 import { Suspense } from "react";
-import ThanksCallClient from "./thanks-call-client";
+import ThanksCall2Client from "./thanks-call2-client";
 import VercelThankYouTracker from "../vercel-thank-you-tracker";
 
-export default function ThanksCallPage() {
+export default function ThanksCall2Page() {
   return (
     <Suspense fallback={null}>
       <VercelThankYouTracker thankYouType="call" />
-      <ThanksCallClient />
+      <ThanksCall2Client />
     </Suspense>
   );
 }

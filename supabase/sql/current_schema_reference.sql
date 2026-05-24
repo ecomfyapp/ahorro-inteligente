@@ -1,4 +1,4 @@
--- Reference only: expected current public schema after running migrations 001-005.
+-- Reference only: expected current public schema after running migrations 001-013.
 -- Do not run this whole file if your database already has data.
 
 create table public.leads (
@@ -37,7 +37,8 @@ create table public.lead_metadata (
   trustedform_claim_status text,
   trustedform_claimed_at timestamptz,
   trustedform_claim_response jsonb,
-  trustedform_claim_error text
+  trustedform_claim_error text,
+  application_id text
 );
 
 create table public.ringba_call_events (
@@ -53,5 +54,6 @@ create table public.ringba_call_events (
   dialed_phone_number text,
   payout numeric,
   revenue numeric,
-  raw_payload jsonb not null
+  raw_payload jsonb not null,
+  printed_number text
 );
