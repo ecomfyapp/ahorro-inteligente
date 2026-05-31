@@ -335,6 +335,12 @@ function getTrustedFormCertUrl() {
   return field?.value?.trim() || "";
 }
 
+function getAdAccountNameParam() {
+  if (typeof window === "undefined") return "";
+
+  return new URLSearchParams(window.location.search).get("adaccount_name")?.trim() || "";
+}
+
 function setDeviceCookie(deviceId: string) {
   if (typeof document === "undefined" || !deviceId) return;
 
@@ -1629,6 +1635,7 @@ export default function Home() {
             deviceId: getOrCreateDeviceId(),
             trustedFormCertUrl: getTrustedFormCertUrl(),
             salePath: shouldUsePayPerCallThankYou ? "call" : "lead",
+            adaccount_name: getAdAccountNameParam(),
           },
         }),
       });
