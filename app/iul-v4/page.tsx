@@ -2467,21 +2467,13 @@ export default function Home() {
       </noscript>
       <style jsx global>{`
         @import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;800&display=swap");
-
-        #headline-ciudad {
-          text-align: center;
-          font-size: 1.8rem;
-          font-weight: bold;
-          margin: 20px 0;
-          line-height: 1.2;
-          background-color: #FFF8DC;
-          color: #111;
-          padding: 15px;
-          border-bottom: 3px solid #FFD700;
-          border-radius: 8px;
-        }
       `}</style>
-      <div id="headline-ciudad">⚠️ ATENCIÓN: Nuevo Programa de Seguro de Vida – Disponible!</div>
+      <div
+        id="headline-ciudad"
+        className="my-[20px] rounded-[8px] border-b-[3px] border-[#FFD700] bg-[#FFF8DC] p-[15px] text-center text-[1.8rem] font-bold leading-[1.2] text-[#111]"
+      >
+        ⚠️ ATENCIÓN: Nuevo Programa de Seguro de Vida – Disponible!
+      </div>
 
       {isRejectedPage ? (
         renderRejectedPage()
