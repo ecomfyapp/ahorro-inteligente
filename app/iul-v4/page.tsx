@@ -199,6 +199,7 @@ const deviceStorageKey = "better-life-device-id";
 const deviceCookieName = "bf_iul_device_id";
 const trustedFormScriptId = "trustedform-certify-sdk";
 const trustedFormFieldName = process.env.NEXT_PUBLIC_TRUSTEDFORM_FIELD || "xxTrustedFormCertUrl";
+const isTrustedFormEnabled = false;
 const defaultRuntimeConfig = {
   payPerCallStatus: "OFF",
   payPerCallStartTime: "",
@@ -1033,6 +1034,7 @@ export default function Home() {
   ]);
 
   useEffect(() => {
+    if (!isTrustedFormEnabled) return;
     if (document.getElementById(trustedFormScriptId)) return;
 
     const trustedFormScript = document.createElement("script");
@@ -1633,7 +1635,7 @@ export default function Home() {
           answers: cleanedAnswers,
           meta: {
             deviceId: getOrCreateDeviceId(),
-            trustedFormCertUrl: getTrustedFormCertUrl(),
+            trustedFormCertUrl: isTrustedFormEnabled ? getTrustedFormCertUrl() : undefined,
             salePath: shouldUsePayPerCallThankYou ? "call" : "lead",
             adaccount_name: getAdAccountNameParam(),
           },
@@ -2250,7 +2252,7 @@ export default function Home() {
                 void submitLead();
               }}
             >
-              <input type="hidden" name={trustedFormFieldName} />
+              {isTrustedFormEnabled ? <input type="hidden" name={trustedFormFieldName} /> : null}
               <div className="flex gap-3">
                 <select
                   value={answers.phoneCountry}
@@ -2462,9 +2464,11 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-[var(--page-bg)] text-[var(--ink)]">
-      <noscript>
-        <img src="https://api.trustedform.com/ns.gif" alt="" />
-      </noscript>
+      {isTrustedFormEnabled ? (
+        <noscript>
+          <img src="https://api.trustedform.com/ns.gif" alt="" />
+        </noscript>
+      ) : null}
       <style jsx global>{`
         @import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;800&display=swap");
       `}</style>
