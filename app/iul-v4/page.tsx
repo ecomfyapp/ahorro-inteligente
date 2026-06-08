@@ -2467,28 +2467,21 @@ export default function Home() {
       </noscript>
       <style jsx global>{`
         @import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;800&display=swap");
+
+        #headline-ciudad {
+          text-align: center;
+          font-size: 1.8rem;
+          font-weight: bold;
+          margin: 20px 0;
+          line-height: 1.2;
+          background-color: #FFF8DC;
+          color: #111;
+          padding: 15px;
+          border-bottom: 3px solid #FFD700;
+          border-radius: 8px;
+        }
       `}</style>
-      <header className="border-b border-transparent bg-white/96 shadow-[0_6px_18px_rgba(18,31,53,0.08)] backdrop-blur-sm">
-        <div className="mx-auto flex h-[60px] w-full max-w-[1200px] items-center justify-between px-4 md:relative md:justify-center">
-          <Image
-            src="/media/better-life-logo.png"
-            alt="Better Life"
-            width={190}
-            height={60}
-            priority
-            className="h-[36px] w-[148px] object-contain md:h-[40px] md:w-[190px]"
-          />
-          <div className="flex items-center gap-2 text-[14px] font-semibold text-[#191919] md:absolute md:right-4">
-            <Image
-              src="/media/secure-form-better-life.png"
-              alt="Secure Form"
-              width={150}
-              height={32}
-              className="h-auto w-[128px] md:w-[136px]"
-            />
-          </div>
-        </div>
-      </header>
+      <div id="headline-ciudad">⚠️ ATENCIÓN: Nuevo Programa de Seguro de Vida – Disponible!</div>
 
       {isRejectedPage ? (
         renderRejectedPage()
