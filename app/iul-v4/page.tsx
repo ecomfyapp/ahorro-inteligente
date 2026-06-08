@@ -2481,7 +2481,7 @@ export default function Home() {
         <section className="px-0 py-0 md:px-4 md:py-6">{renderSuccessPage()}</section>
       ) : (
         <>
-          <div className="mx-auto flex min-h-[calc(100vh-60px)] w-full max-w-[1200px] flex-col items-center px-3 pb-6 pt-4 md:px-4 md:pb-10 md:pt-2">
+          <div className="mx-auto flex min-h-[calc(100vh-60px)] w-full max-w-[1200px] flex-col items-center px-3 pb-6 pt-2 md:px-4 md:pb-10 md:pt-1">
             <section
               className={`flex w-full flex-col items-center ${
                 isQuestionnaire ? "justify-start" : "justify-center"
