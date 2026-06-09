@@ -23,6 +23,7 @@ const iulV4StepEvents: Record<string, string> = {
   name: "v4_step4_name",
   phone: "v4_step5_contact",
 };
+const facebookTrackingEnabled = false;
 
 function trackVercelVirtualPage(name: string) {
   pageview({
@@ -82,6 +83,7 @@ export function pushGtmEvent(event: string, payload: GtmEventPayload = {}) {
   trackVercelFunnelEvent(event, payload);
 
   if (!["PageView", "ViewContent", "Lead", "Contact"].includes(event)) return;
+  if (!facebookTrackingEnabled) return;
 
   const facebookEventPayload = JSON.stringify({
     event,

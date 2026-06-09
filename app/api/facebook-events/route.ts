@@ -10,6 +10,7 @@ type FacebookEventPayload = {
 
 const allowedEvents = new Set(["PageView", "ViewContent", "Lead", "Contact"]);
 const defaultGraphApiVersion = "v20.0";
+const facebookTrackingEnabled = false;
 
 function splitEnvList(value?: string) {
   return String(value || "")
@@ -170,6 +171,10 @@ async function postFacebookEvent({
 }
 
 export async function POST(request: Request) {
+  if (!facebookTrackingEnabled) {
+    return NextResponse.json({ ok: true, skipped: "facebook_tracking_disabled" });
+  }
+
   const body = (await request.json().catch(() => null)) as FacebookEventPayload | null;
   const eventName = normalizeString(body?.event);
   const payload = body?.payload || {};

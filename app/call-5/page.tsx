@@ -675,6 +675,8 @@ function clearDisqualificationCookie() {
   document.cookie = `${disqualificationCookieName}=; Max-Age=0; Path=/; SameSite=Lax`;
 }
 
+const facebookTrackingEnabled = false;
+
 function trackCallFunnelEvent(eventName: "ViewContent" | "Contact", currentStep: FunnelStep) {
   const trackingWindow = window as Window & {
     fbq?: (command: string, event: string, params?: Record<string, string>) => void;
@@ -688,9 +690,11 @@ function trackCallFunnelEvent(eventName: "ViewContent" | "Contact", currentStep:
     content_name: "Seguro IUL Call Funnel",
   };
 
-  trackingWindow.fbq?.("track", eventName, eventParams);
+  if (facebookTrackingEnabled) {
+    trackingWindow.fbq?.("track", eventName, eventParams);
+    sendMetaPixelBeacon(eventName);
+  }
   trackingWindow.ttq?.track?.(eventName, eventParams);
-  sendMetaPixelBeacon(eventName);
 }
 
 function sendMetaPixelBeacon(eventName: "PageView" | "ViewContent" | "Contact") {
@@ -709,13 +713,15 @@ function trackCallFunnelPageView() {
 
   trackingWindow.__callFunnelPageViews = trackingWindow.__callFunnelPageViews || {};
   trackingWindow.__callFunnelPageViews[callFunnelPagePath] = true;
-  trackingWindow.fbq?.("track", "PageView", { page: callFunnelPagePath, step: "age" });
+  if (facebookTrackingEnabled) {
+    trackingWindow.fbq?.("track", "PageView", { page: callFunnelPagePath, step: "age" });
+    sendMetaPixelBeacon("PageView");
+  }
   trackingWindow.ttq?.page?.({
     content_id: "call_iul",
     content_type: "product",
     content_name: "Seguro IUL Call Funnel",
   });
-  sendMetaPixelBeacon("PageView");
 }
 
 function CallFunnelPixels({ currentStep }: { currentStep: FunnelStep }) {
