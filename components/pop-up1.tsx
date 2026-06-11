@@ -469,6 +469,9 @@ export default function PopUp1({
         )}
         {showActions ? (
           <div className="mt-6 grid animate-[fade-up_.35s_ease-out] gap-3">
+            <p className="text-center text-[13px] font-light leading-tight text-[#5d6674]">
+              Es necesario designar un beneficiario.
+            </p>
             <a
               ref={primaryLinkRef}
               data-popup1-ringba-phone
@@ -496,7 +499,7 @@ export default function PopUp1({
             <button
               type="button"
               onClick={handleContinueClick}
-              className="mx-auto inline-flex min-h-8 items-center justify-center gap-1.5 px-2 text-center text-[14px] font-bold leading-none text-[#5d6674] transition hover:text-[#273449]"
+              className="mx-auto inline-flex min-h-8 items-center justify-center gap-1.5 px-2 text-center text-[14px] font-light leading-none text-[#5d6674] transition hover:text-[#273449]"
             >
               <Image
                 src="/best-money-assets/clipart2254363.png"
