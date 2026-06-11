@@ -1,0 +1,12 @@
+
+> dev
+> next dev
+
+▲ Next.js 16.2.6 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.4.23:3000
+- Environments: .env.local
+✓ Ready in 465ms
+Creating turbopack project { dir: 'C:\\Dev-Ecomfylead\\best-insurance-life', testMode: true }
+- Cache Components enabled
+

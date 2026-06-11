@@ -61,8 +61,6 @@ function getUrlParams() {
 
 export default function PopUp1({
   open,
-  title,
-  description,
   primaryLabel = "Hablar con un asesor",
   secondaryLabel = "Continuar con mi aplicación",
   leadId = "",
@@ -75,8 +73,6 @@ export default function PopUp1({
   const primaryLinkRef = useRef<HTMLAnchorElement | null>(null);
   const hasSentPrintedNumberRef = useRef(false);
   const printedNumberRef = useRef("");
-  const [resolvedCheckCount, setResolvedCheckCount] = useState(0);
-  const [showActions, setShowActions] = useState(false);
   const [loadingDotCount, setLoadingDotCount] = useState(1);
   const ringbaScriptUrl = /^CA[a-zA-Z0-9]+$/.test(ringbaCampaignId)
     ? `//b-js.ringba.com/${ringbaCampaignId}`
@@ -157,34 +153,6 @@ export default function PopUp1({
   useEffect(() => {
     if (!open) return;
 
-    const timeoutIds: number[] = [
-      window.setTimeout(() => {
-        setResolvedCheckCount(0);
-        setShowActions(false);
-      }, 0),
-    ];
-
-    qualificationChecks.forEach((_, index) => {
-      const stepStart = index * 1900;
-
-      timeoutIds.push(
-        window.setTimeout(() => {
-          setResolvedCheckCount(index + 1);
-        }, stepStart + 1150),
-      );
-    });
-    timeoutIds.push(
-      window.setTimeout(() => {
-        setShowActions(true);
-      }, qualificationChecks.length * 1900),
-    );
-
-    return () => timeoutIds.forEach((timeoutId) => window.clearTimeout(timeoutId));
-  }, [open]);
-
-  useEffect(() => {
-    if (!open) return;
-
     const intervalId = window.setInterval(() => {
       setLoadingDotCount((count) => (count >= 3 ? 1 : count + 1));
     }, 800);
@@ -200,9 +168,6 @@ export default function PopUp1({
     ...ringbaTags,
     btn_source: "pop_up",
   });
-  const isQualificationComplete = resolvedCheckCount === qualificationChecks.length;
-  const isActiveCheckMissing = isQualificationComplete;
-
   function handleCallClick() {
     const ringbaWindow = window as Window & {
       _rgba_tags?: Array<Record<string, string>>;
@@ -241,47 +206,6 @@ export default function PopUp1({
         <Script id="pop-up1-ringba-number-pool" src={ringbaScriptUrl} strategy="afterInteractive" />
       ) : null}
       <style jsx>{`
-        @keyframes popup1-qualifier-roll {
-          0% {
-            opacity: 0;
-            transform: translateY(9px) rotateX(-18deg);
-          }
-          18% {
-            opacity: 1;
-            transform: translateY(0) rotateX(0deg);
-          }
-          82% {
-            opacity: 1;
-            transform: translateY(0) rotateX(0deg);
-          }
-          100% {
-            opacity: 0;
-            transform: translateY(-9px) rotateX(18deg);
-          }
-        }
-
-        .popup1-qualifier-roll {
-          animation: popup1-qualifier-roll 1.5s ease-in-out both;
-          transform-origin: center;
-        }
-
-        @keyframes popup1-qualifier-final {
-          0% {
-            opacity: 0;
-            transform: translateY(9px) rotateX(-18deg);
-          }
-          22%,
-          100% {
-            opacity: 1;
-            transform: translateY(0) rotateX(0deg);
-          }
-        }
-
-        .popup1-qualifier-final {
-          animation: popup1-qualifier-final 1.5s ease-out both;
-          transform-origin: center;
-        }
-
         @keyframes popup1-call-wave {
           0%,
           18% {
@@ -311,8 +235,6 @@ export default function PopUp1({
         }
 
         @media (prefers-reduced-motion: reduce) {
-          .popup1-qualifier-roll,
-          .popup1-qualifier-final,
           .popup1-call-wave {
             animation: none;
           }
@@ -334,57 +256,33 @@ export default function PopUp1({
       <div
         role="dialog"
         aria-modal="true"
-        className="w-full max-w-[420px] rounded-[18px] bg-white p-6 text-center shadow-[0_24px_70px_rgba(0,0,0,0.24)] transition-[background-image] duration-700"
+        className="w-full max-w-[420px] rounded-[18px] bg-white p-6 text-center shadow-[0_24px_70px_rgba(0,0,0,0.24)]"
         style={{
-          backgroundImage: isQualificationComplete
-            ? isActiveCheckMissing
-              ? "radial-gradient(circle at center, #ffffff 42%, #ffffff 62%, rgba(254,226,226,0.52) 100%)"
-              : "radial-gradient(circle at center, #ffffff 42%, #ffffff 62%, rgba(220,248,220,0.58) 100%)"
-            : "none",
+          backgroundImage:
+            "radial-gradient(circle at center, #ffffff 42%, #ffffff 62%, rgba(254,226,226,0.52) 100%)",
         }}
       >
-        {isQualificationComplete ? (
-          <div className="mx-auto mb-5 flex h-[64px] w-[64px] animate-[fade-up_.3s_ease-out] items-center justify-center rounded-full bg-[#fee2e2] text-[#ef4444]">
-            <svg
-              aria-hidden="true"
-              viewBox="0 0 24 24"
-              className="h-8 w-8"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="3.4"
-              strokeLinecap="round"
-            >
-              <path d="m6 6 12 12M18 6 6 18" />
-            </svg>
-          </div>
-        ) : (
-          <Image
-            src="/best-money-assets/vT8DJ.gif"
-            alt="Procesando solicitud"
-            width={300}
-            height={300}
-            unoptimized
-            priority
-            className="mx-auto mb-5 h-[64px] w-[64px]"
-          />
-        )}
+        <div className="mx-auto mb-5 flex h-[64px] w-[64px] items-center justify-center rounded-full bg-[#fee2e2] text-[#ef4444]">
+          <svg
+            aria-hidden="true"
+            viewBox="0 0 24 24"
+            className="h-8 w-8"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="3.4"
+            strokeLinecap="round"
+          >
+            <path d="m6 6 12 12M18 6 6 18" />
+          </svg>
+        </div>
 
-        <h2
-          className="flex items-baseline justify-center text-[24px] font-black leading-[1.12] tracking-[-0.015em] text-[#101820]"
-        >
-          {title ? (
-            title
-          ) : (
-            <>
-              <span>Verificando elegibilidad</span>
-              <span className="inline-block w-[0.9em] text-left">
-                {".".repeat(loadingDotCount)}
-              </span>
-            </>
-          )}
+        <h2 className="flex items-baseline justify-center text-[24px] font-black leading-[1.12] text-[#101820]">
+          <span>Verificando elegibilidad</span>
+          <span className="inline-block w-[0.9em] text-left">
+            {".".repeat(loadingDotCount)}
+          </span>
         </h2>
-        {isQualificationComplete ? (
-          <div className="mx-auto mt-4 flex max-w-[300px] items-center justify-center gap-2 text-[#273449]">
+        <div className="mx-auto mt-4 flex max-w-[300px] items-center justify-center gap-2 text-[#273449]">
             <span className="relative flex h-7 w-8 shrink-0 items-center justify-center text-[#f5b800]">
               <svg
                 aria-hidden="true"
@@ -399,21 +297,15 @@ export default function PopUp1({
             <span className="text-[15px] font-black leading-tight">
               No se agregó un beneficiario.
             </span>
-          </div>
-        ) : null}
-        {description ? (
-          <p className="mt-4 text-[16px] leading-[1.45] text-[#5d6674]">
-            {description}
-          </p>
-        ) : (
-          <div className="mt-5 grid gap-2 text-left" aria-live="polite">
-            {qualificationChecks.slice(0, resolvedCheckCount).map((check) => {
+        </div>
+        <div className="mt-5 grid gap-2 text-left" aria-live="polite">
+            {qualificationChecks.map((check) => {
               const isMissing = check.result === "missing";
 
               return (
                 <div
                   key={check.label}
-                  className="flex min-h-10 animate-[fade-up_.3s_ease-out] items-center justify-between gap-3 rounded-xl border border-[#e4eaf1] bg-white/75 px-3 py-2"
+                  className="flex min-h-10 items-center justify-between gap-3 rounded-xl border border-[#e4eaf1] bg-white/75 px-3 py-2"
                 >
                   <span className="text-[13px] font-bold text-[#273449]">
                     {check.label}
@@ -454,21 +346,8 @@ export default function PopUp1({
                 </div>
               );
             })}
-            {resolvedCheckCount < qualificationChecks.length ? (
-              <div className="flex min-h-10 animate-[fade-up_.3s_ease-out] items-center justify-between gap-3 rounded-xl border border-[#e4eaf1] bg-white/75 px-3 py-2">
-                <span className="text-[13px] font-bold text-[#273449]">
-                  Verificando {qualificationChecks[resolvedCheckCount].label.toLowerCase()}
-                </span>
-                <span
-                  className="h-5 w-5 shrink-0 animate-spin rounded-full border-2 border-[#d6dee8] border-t-[#2d6cdf]"
-                  aria-label="Verificando"
-                />
-              </div>
-            ) : null}
-          </div>
-        )}
-        {showActions ? (
-          <div className="mt-6 grid animate-[fade-up_.35s_ease-out] gap-3">
+        </div>
+        <div className="mt-6 grid gap-3">
             <p className="text-center text-[13px] font-light leading-tight text-[#5d6674]">
               Es necesario designar un beneficiario.
             </p>
@@ -512,8 +391,7 @@ export default function PopUp1({
                 {secondaryLabel}
               </span>
             </button>
-          </div>
-        ) : null}
+        </div>
       </div>
     </div>
   );
