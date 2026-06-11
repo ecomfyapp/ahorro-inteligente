@@ -858,6 +858,17 @@ export default function Home() {
   const submittedLeadRef = useRef(false);
   const runtimeConfigRef = useRef<RuntimeConfig>(defaultRuntimeConfig);
 
+  useEffect(() => {
+    if (process.env.NODE_ENV !== "development") return;
+
+    const searchParams = new URLSearchParams(window.location.search);
+    if (searchParams.get("preview_popup1") === "1") {
+      setSubmittedFirstName("Antony");
+      setSubmittedInsuranceGoal("Ahorrar e invertir");
+      setIsPayPerCallPopupOpen(true);
+    }
+  }, []);
+
   const isSuccessPage = currentStep === "success";
   const isRejectedPage = currentStep === "rejected";
   const isQuestionnaire = currentStep !== "intro" && !isRejectedPage;
