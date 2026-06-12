@@ -12,6 +12,8 @@ type LeadPayload = {
     trustedFormCertUrl?: string;
     salePath?: "lead" | "call";
     adaccount_name?: string;
+    sub1?: string;
+    sub2?: string;
   };
 };
 
@@ -178,6 +180,27 @@ function normalizeUsPhone(value: unknown) {
 
 function normalizeString(value: unknown) {
   return String(value || "").trim();
+}
+
+function getCaseInsensitiveParam(params: URLSearchParams, key: string) {
+  const normalizedKey = key.toLowerCase();
+
+  for (const [paramKey, value] of params.entries()) {
+    if (paramKey.toLowerCase() === normalizedKey) return normalizeString(value);
+  }
+
+  return "";
+}
+
+function getRefererTrackingParam(request: Request, key: string) {
+  const referer = request.headers.get("referer");
+  if (!referer) return "";
+
+  try {
+    return getCaseInsensitiveParam(new URL(referer).searchParams, key);
+  } catch {
+    return "";
+  }
 }
 
 function normalizeState(value: unknown) {
@@ -419,6 +442,8 @@ export async function POST(request: Request) {
   const deviceId = String(body.meta?.deviceId || getRequestCookie(request, deviceCookieName)).trim();
   const trustedFormCertUrl = normalizeString(body.meta?.trustedFormCertUrl);
   const adaccountName = normalizeString(body.meta?.adaccount_name);
+  const sub1 = normalizeString(body.meta?.sub1) || getRefererTrackingParam(request, "sub1");
+  const sub2 = normalizeString(body.meta?.sub2) || getRefererTrackingParam(request, "sub2");
   const now = Date.now();
   maybePruneAttemptStores(now);
   const duplicatePhoneCount = phoneValidation.normalized
@@ -465,6 +490,8 @@ export async function POST(request: Request) {
     geolocation: geo,
     trustedFormCertUrl,
     adaccountName,
+    sub1,
+    sub2,
     salePath,
     leadStatus,
     ...restAnswers,
@@ -498,6 +525,8 @@ export async function POST(request: Request) {
       language: leadLanguage,
       source: leadSource,
       domain: leadDomain,
+      sub1: sub1 || null,
+      sub2: sub2 || null,
     })
     .select("lead_id")
     .single();

@@ -342,6 +342,18 @@ function getAdAccountNameParam() {
   return new URLSearchParams(window.location.search).get("adaccount_name")?.trim() || "";
 }
 
+function getCaseInsensitiveSearchParam(key: string) {
+  if (typeof window === "undefined") return "";
+
+  const normalizedKey = key.toLowerCase();
+
+  for (const [paramKey, value] of new URLSearchParams(window.location.search).entries()) {
+    if (paramKey.toLowerCase() === normalizedKey) return value.trim();
+  }
+
+  return "";
+}
+
 function setDeviceCookie(deviceId: string) {
   if (typeof document === "undefined" || !deviceId) return;
 
@@ -1649,6 +1661,8 @@ export default function Home() {
             trustedFormCertUrl: isTrustedFormEnabled ? getTrustedFormCertUrl() : undefined,
             salePath: shouldUsePayPerCallThankYou ? "call" : "lead",
             adaccount_name: getAdAccountNameParam(),
+            sub1: getCaseInsensitiveSearchParam("sub1"),
+            sub2: getCaseInsensitiveSearchParam("sub2"),
           },
         }),
       });
